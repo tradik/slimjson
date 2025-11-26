@@ -65,6 +65,7 @@ jobs:
           if [ "${{ matrix.os }}" = "windows" ]; then
             OUTPUT_NAME+='.exe'
           fi
+          mkdir -p build
           go build -o build/$OUTPUT_NAME ./cmd/slimjson
           
       - name: Upload Artifacts
@@ -72,3 +73,57 @@ jobs:
         with:
           name: slimjson-${{ matrix.os }}-${{ matrix.arch }}
           path: build/*
+
+  release:
+    name: Create Release
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      
+      - name: Generate version
+        id: version
+        run: |
+          VERSION="v0.1.$(git rev-list --count HEAD)"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Generated version: $VERSION"
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          find artifacts -type f -exec cp {} release/ \;
+          ls -la release/
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          body: |
+            ## 🎉 Automated Release
+            
+            **Version:** ${{ steps.version.outputs.version }}
+            **Commit:** ${{ github.sha }}
+            
+            ### 📦 Downloads
+            
+            Choose the binary for your platform:
+            - **Linux**: `slimjson-linux-amd64`, `slimjson-linux-arm64`
+            - **macOS**: `slimjson-darwin-amd64` (Intel), `slimjson-darwin-arm64` (Apple Silicon)
+            - **FreeBSD**: `slimjson-freebsd-amd64`, `slimjson-freebsd-arm64`
+            
+            ### 📝 Changes
+            See commit history for details.
+          files: release/*
+          draft: false
+          prerelease: false
