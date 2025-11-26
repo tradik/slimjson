@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Three real-world JSON test files (resume.json, schema-resume.json, users.json)
 - Compression benchmark tool (`compression_benchmark.go`) with detailed metrics
 - **Token counting** in compression tests - shows estimated token reduction for AI/LLM use cases
+- **Statistical analysis** with standard deviation calculation (10 iterations per test)
+- Detailed methodology documentation in `testing/METHODOLOGY.md`
 - Performance benchmarks (`slimjson_bench_test.go`) with 9 different scenarios
 - Compression results table in README showing real-world reduction percentages
 - Four compression profiles: Light, Medium, Aggressive, AI-Optimized

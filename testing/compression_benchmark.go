@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,17 +14,27 @@ import (
 
 // CompressionResult holds metrics for a single test
 type CompressionResult struct {
-	Filename          string
-	OriginalSize      int
-	CompressedSize    int
-	Reduction         float64
-	ReductionPct      float64
-	OriginalTokens    int
-	CompressedTokens  int
-	TokenReduction    float64
-	TokenReductionPct float64
-	ProcessingTime    time.Duration
-	ConfigUsed        string
+	Filename             string
+	OriginalSize         int
+	CompressedSize       int
+	Reduction            float64
+	ReductionPct         float64
+	OriginalTokens       int
+	CompressedTokens     int
+	TokenReduction       float64
+	TokenReductionPct    float64
+	ProcessingTime       time.Duration
+	ProcessingTimeStdDev time.Duration
+	Iterations           int
+	ConfigUsed           string
+}
+
+// Statistics holds statistical metrics
+type Statistics struct {
+	Mean   float64
+	StdDev float64
+	Min    float64
+	Max    float64
 }
 
 // TestConfig defines a compression configuration to test
@@ -137,17 +148,33 @@ func main() {
 func testCompression(filename string, data interface{}, originalSize int, originalData []byte, testCfg TestConfig) CompressionResult {
 	slimmer := slimjson.New(testCfg.Config)
 
-	// Measure processing time
-	start := time.Now()
-	compressed := slimmer.Slim(data)
-	processingTime := time.Since(start)
+	// Run multiple iterations to calculate statistics
+	const iterations = 10
+	times := make([]float64, iterations)
 
-	// Marshal compressed data
-	compressedData, err := json.Marshal(compressed)
-	if err != nil {
-		fmt.Printf("Error marshaling compressed data: %v\n", err)
-		return CompressionResult{}
+	var compressedData []byte
+	var err error
+
+	for i := 0; i < iterations; i++ {
+		start := time.Now()
+		compressed := slimmer.Slim(data)
+		elapsed := time.Since(start)
+		times[i] = float64(elapsed.Nanoseconds())
+
+		// Marshal on last iteration
+		if i == iterations-1 {
+			compressedData, err = json.Marshal(compressed)
+			if err != nil {
+				fmt.Printf("Error marshaling compressed data: %v\n", err)
+				return CompressionResult{}
+			}
+		}
 	}
+
+	// Calculate statistics
+	stats := calculateStatistics(times)
+	avgTime := time.Duration(stats.Mean)
+	stdDevTime := time.Duration(stats.StdDev)
 
 	compressedSize := len(compressedData)
 	reduction := float64(originalSize - compressedSize)
@@ -160,17 +187,58 @@ func testCompression(filename string, data interface{}, originalSize int, origin
 	tokenReductionPct := (tokenReduction / float64(originalTokens)) * 100
 
 	return CompressionResult{
-		Filename:          filename,
-		OriginalSize:      originalSize,
-		CompressedSize:    compressedSize,
-		Reduction:         reduction,
-		ReductionPct:      reductionPct,
-		OriginalTokens:    originalTokens,
-		CompressedTokens:  compressedTokens,
-		TokenReduction:    tokenReduction,
-		TokenReductionPct: tokenReductionPct,
-		ProcessingTime:    processingTime,
-		ConfigUsed:        testCfg.Name,
+		Filename:             filename,
+		OriginalSize:         originalSize,
+		CompressedSize:       compressedSize,
+		Reduction:            reduction,
+		ReductionPct:         reductionPct,
+		OriginalTokens:       originalTokens,
+		CompressedTokens:     compressedTokens,
+		TokenReduction:       tokenReduction,
+		TokenReductionPct:    tokenReductionPct,
+		ProcessingTime:       avgTime,
+		ProcessingTimeStdDev: stdDevTime,
+		Iterations:           iterations,
+		ConfigUsed:           testCfg.Name,
+	}
+}
+
+// calculateStatistics computes mean, standard deviation, min, and max
+func calculateStatistics(values []float64) Statistics {
+	if len(values) == 0 {
+		return Statistics{}
+	}
+
+	// Calculate mean
+	var sum float64
+	min := values[0]
+	max := values[0]
+
+	for _, v := range values {
+		sum += v
+		if v < min {
+			min = v
+		}
+		if v > max {
+			max = v
+		}
+	}
+	mean := sum / float64(len(values))
+
+	// Calculate standard deviation
+	var varianceSum float64
+	for _, v := range values {
+		diff := v - mean
+		varianceSum += diff * diff
+	}
+	variance := varianceSum / float64(len(values))
+	stdDev := math.Sqrt(variance)
+
+	return Statistics{
+		Mean:   mean,
+		StdDev: stdDev,
+		Min:    min,
+		Max:    max,
 	}
 }
 
@@ -181,7 +249,8 @@ func printResult(result CompressionResult) {
 	fmt.Printf("    Reduction:   %s (%.2f%%) | Tokens: %d (%.2f%%)\n",
 		formatBytes(int(result.Reduction)), result.ReductionPct,
 		int(result.TokenReduction), result.TokenReductionPct)
-	fmt.Printf("    Time:        %v\n", result.ProcessingTime)
+	fmt.Printf("    Time:        %v ± %v (n=%d)\n",
+		result.ProcessingTime, result.ProcessingTimeStdDev, result.Iterations)
 	fmt.Println()
 }
 

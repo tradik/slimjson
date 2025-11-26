@@ -246,6 +246,8 @@ Real-world compression tests on various JSON files:
 
 **Token Estimation**: Tokens are estimated using ~4 characters per token, approximating GPT-style tokenization for JSON/English text.
 
+**Statistical Analysis**: Each test is run 10 times. Processing times show mean ± standard deviation (n=10) for statistical reliability. See [testing/METHODOLOGY.md](testing/METHODOLOGY.md) for detailed methodology.
+
 ### Configuration Profiles
 
 - **Light**: `MaxDepth: 10, MaxListLength: 20, StripEmpty: true` - Preserves most data structure

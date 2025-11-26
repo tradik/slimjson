@@ -83,7 +83,21 @@ The test tool provides:
 
 1. **Detailed Results**: Per-file, per-config compression metrics
 2. **Markdown Table**: Ready-to-use table for documentation
-3. **Processing Time**: Performance metrics for each operation
+3. **Processing Time**: Performance metrics with statistical analysis
+   - Mean processing time
+   - Standard deviation (±σ)
+   - Number of iterations (n=10)
+
+### Statistical Analysis
+
+Each test runs **10 iterations** to ensure reliability:
+- **Mean**: Average processing time
+- **StdDev**: Measure of variability (±σ)
+- **Format**: `105.3µs ± 20.7µs (n=10)`
+
+Lower standard deviation indicates more consistent performance.
+
+See [METHODOLOGY.md](METHODOLOGY.md) for detailed statistical methodology.
 
 ## Adding New Test Files
 
