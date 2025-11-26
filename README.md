@@ -160,6 +160,65 @@ func main() {
 }
 ```
 
+### Docker / Podman 🐳
+
+Run `slimjson` as a containerized service using Docker or Podman.
+
+#### Pull from GitHub Container Registry
+
+Pre-built multi-arch images are available:
+
+```bash
+# Pull latest version
+docker pull ghcr.io/tradik/slimjson:latest
+
+# Pull specific version
+docker pull ghcr.io/tradik/slimjson:v0.1.X
+
+# Using Podman
+podman pull ghcr.io/tradik/slimjson:latest
+```
+
+#### Build the image locally
+
+```bash
+# Using Docker
+make docker-build
+# or
+docker build -t slimjson:latest .
+
+# Using Podman
+make podman-build
+# or
+podman build -t slimjson:latest .
+```
+
+#### Run the container
+
+```bash
+# Using Docker (from ghcr.io)
+cat input.json | docker run -i --rm ghcr.io/tradik/slimjson:latest -depth 3 -list-len 5
+
+# Using local image
+cat input.json | docker run -i --rm slimjson:latest -depth 3 -list-len 5
+
+# Using Podman
+cat input.json | podman run -i --rm ghcr.io/tradik/slimjson:latest -depth 3 -list-len 5
+
+# Using docker-compose
+docker-compose up
+```
+
+#### Example with file mounting
+
+```bash
+# Docker
+docker run -i --rm -v $(pwd)/data:/data ghcr.io/tradik/slimjson:latest -depth 5 < /data/input.json > /data/output.json
+
+# Podman
+podman run -i --rm -v $(pwd)/data:/data:z ghcr.io/tradik/slimjson:latest -depth 5 < /data/input.json > /data/output.json
+```
+
 ## Development 🛠️
 
 ### Requirements

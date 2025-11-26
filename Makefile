@@ -10,7 +10,7 @@ COLOR_BLUE=\033[34m
 COLOR_YELLOW=\033[33m
 COLOR_CYAN=\033[36m
 
-.PHONY: all build test lint clean
+.PHONY: all build test lint clean docker-build docker-run podman-build podman-run
 
 all: lint test build
 
@@ -34,3 +34,21 @@ clean:
 	@echo "$(COLOR_BOLD)$(COLOR_YELLOW)🧹 Cleaning...$(COLOR_RESET)"
 	@rm -rf $(BUILD_DIR)
 	@echo "$(COLOR_GREEN)✅ Clean complete$(COLOR_RESET)"
+
+docker-build:
+	@echo "$(COLOR_BOLD)$(COLOR_BLUE)🐳 Building Docker image...$(COLOR_RESET)"
+	@docker build -t slimjson:latest .
+	@echo "$(COLOR_GREEN)✅ Docker image built$(COLOR_RESET)"
+
+docker-run:
+	@echo "$(COLOR_BOLD)$(COLOR_CYAN)🐳 Running Docker container...$(COLOR_RESET)"
+	@docker run -i --rm slimjson:latest
+
+podman-build:
+	@echo "$(COLOR_BOLD)$(COLOR_BLUE)📦 Building Podman image...$(COLOR_RESET)"
+	@podman build -t slimjson:latest .
+	@echo "$(COLOR_GREEN)✅ Podman image built$(COLOR_RESET)"
+
+podman-run:
+	@echo "$(COLOR_BOLD)$(COLOR_CYAN)📦 Running Podman container...$(COLOR_RESET)"
+	@podman run -i --rm slimjson:latest

@@ -1,0 +1,10 @@
+.git
+.github
+bin
+build
+*.md
+LICENSE
+Makefile
+.gitignore
+.golangci.yml
+*_test.go

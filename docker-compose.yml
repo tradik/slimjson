@@ -1,0 +1,15 @@
+services:
+  slimjson:
+    build: .
+    image: slimjson:latest
+    container_name: slimjson
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    # Example: pipe JSON through stdin
+    # command: ["-depth", "5", "-list-len", "10", "-strip-empty=true"]
+    volumes:
+      - ./data:/data
+    # If running as HTTP service in future:
+    # ports:
+    #   - "8080:8080"
