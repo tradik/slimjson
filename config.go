@@ -43,7 +43,7 @@ func ParseConfigFile(path string) (map[string]Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open config file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	profiles := make(map[string]Config)
 	var currentProfile string

@@ -249,10 +249,15 @@ func TestGetBuiltinProfiles(t *testing.T) {
 func TestLoadConfigFileNotFound(t *testing.T) {
 	// Change to a directory where .slimjson doesn't exist
 	tmpDir := t.TempDir()
-	originalDir, _ := os.Getwd()
-	defer os.Chdir(originalDir)
+	originalDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Failed to get current directory: %v", err)
+	}
+	defer func() { _ = os.Chdir(originalDir) }()
 
-	os.Chdir(tmpDir)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatalf("Failed to change directory: %v", err)
+	}
 
 	profiles, err := LoadConfigFile()
 	if err != nil {
