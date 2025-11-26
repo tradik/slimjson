@@ -16,6 +16,13 @@ permalink: /
 
 ✨ Perfect for reducing token usage when sending large JSON payloads to LLMs and AI APIs.
 
+## Quick Links 📚
+
+- 📖 [CLI Examples](EXAMPLES.md) - Command-line usage examples
+- 💻 [Library Guide](LIBRARY_EXAMPLES.md) - Complete guide for developers using SlimJSON as a Go library
+- ⚙️ [Configuration File](.slimjson.example) - Custom profiles with `.slimjson` file
+- 🧪 [Testing Methodology](testing/METHODOLOGY.md) - Compression testing details
+
 ## Features ⚡
 
 - 🗑️ **Prune Unnecessary Fields**: Remove specific fields by name (blocklist).
@@ -23,6 +30,8 @@ permalink: /
 - ✂️ **Shorten Lists**: Limit the number of elements in arrays.
 - 📝 **Truncate Strings**: Limit string length (UTF-8 aware, counts runes not bytes).
 - 🧹 **Strip Empty Values**: Remove `null`, empty strings, empty arrays, and empty objects.
+- ⚙️ **Custom Profiles**: Define reusable compression profiles in `.slimjson` config file.
+- 🔧 **Go Library**: Use as a library in your Go applications with full programmatic control.
 - ⚡ **High Performance**: Process files in 16-47µs with excellent parallel scalability.
 - 📊 **Proven Results**: 24-98% size reduction on real-world JSON files.
 - 🧪 **Comprehensive Testing**: Full test suite with benchmarks and compression metrics.
@@ -292,9 +301,19 @@ slimjson -profile ai-optimized \
 
 **Note**: Profiles do NOT truncate strings to preserve data integrity. Use `-string-len` manually if needed, but be aware this may lose information.
 
-📚 **See [EXAMPLES.md](EXAMPLES.md) for detailed usage examples and common patterns.**
+📚 **See [EXAMPLES.md](EXAMPLES.md) for CLI examples and [LIBRARY_EXAMPLES.md](LIBRARY_EXAMPLES.md) for complete library usage guide.**
 
-### Library
+### Library (Go Package)
+
+SlimJSON can be used as a Go library in your applications.
+
+#### Installation
+
+```bash
+go get github.com/tradik/slimjson
+```
+
+#### Basic Usage
 
 ```go
 package main
@@ -317,17 +336,293 @@ func main() {
 		"empty": "",
 	}
 
+	// Create configuration
 	cfg := slimjson.Config{
 		MaxDepth:      2,
 		MaxListLength: 3,
 		StripEmpty:    true,
 	}
 
+	// Create slimmer and process data
 	slimmer := slimjson.New(cfg)
 	result := slimmer.Slim(data)
 
+	// Output result
 	out, _ := json.MarshalIndent(result, "", "  ")
 	fmt.Println(string(out))
+}
+```
+
+#### Using Built-in Profiles
+
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/tradik/slimjson"
+)
+
+func main() {
+	// Get built-in profile
+	profiles := slimjson.GetBuiltinProfiles()
+	cfg := profiles["medium"]
+	
+	// Or use a specific profile directly
+	cfg := slimjson.Config{
+		MaxDepth:      5,
+		MaxListLength: 10,
+		StripEmpty:    true,
+	}
+
+	slimmer := slimjson.New(cfg)
+	result := slimmer.Slim(yourData)
+	
+	// ... use result
+}
+```
+
+#### Advanced Configuration
+
+```go
+package main
+
+import (
+	"github.com/tradik/slimjson"
+)
+
+func main() {
+	// Full configuration with all options
+	cfg := slimjson.Config{
+		// Basic options
+		MaxDepth:        5,
+		MaxListLength:   10,
+		MaxStringLength: 0,  // 0 = unlimited
+		StripEmpty:      true,
+		BlockList:       []string{"password", "secret", "token"},
+		
+		// Optimization options
+		DecimalPlaces:     2,
+		DeduplicateArrays: true,
+		SampleStrategy:    "first_last",
+		SampleSize:        20,
+		
+		// Advanced compression
+		NullCompression:          true,
+		TypeInference:            true,
+		BoolCompression:          true,
+		TimestampCompression:     true,
+		StringPooling:            true,
+		StringPoolMinOccurrences: 2,
+		NumberDeltaEncoding:      true,
+		NumberDeltaThreshold:     5,
+		EnumDetection:            true,
+		EnumMaxValues:            10,
+	}
+
+	slimmer := slimjson.New(cfg)
+	result := slimmer.Slim(data)
+	
+	// Result may contain metadata fields:
+	// - _strings: String pool (if StringPooling enabled)
+	// - _enums: Enum mappings (if EnumDetection enabled)
+	// - _nulls: Tracked null fields (if NullCompression enabled)
+}
+```
+
+#### Loading Custom Profiles from File
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/tradik/slimjson"
+)
+
+func main() {
+	// Load profiles from .slimjson file
+	customProfiles, err := slimjson.LoadConfigFile()
+	if err != nil {
+		fmt.Printf("Warning: %v\n", err)
+		customProfiles = make(map[string]slimjson.Config)
+	}
+	
+	// Use custom profile
+	if cfg, ok := customProfiles["my-custom-profile"]; ok {
+		slimmer := slimjson.New(cfg)
+		result := slimmer.Slim(data)
+		// ... use result
+	}
+	
+	// Or combine built-in and custom profiles
+	allProfiles := slimjson.GetBuiltinProfiles()
+	for name, cfg := range customProfiles {
+		allProfiles[name] = cfg
+	}
+	
+	// Use any profile
+	cfg := allProfiles["api-response"]
+	slimmer := slimjson.New(cfg)
+	result := slimmer.Slim(data)
+}
+```
+
+#### Parsing Config File Manually
+
+```go
+package main
+
+import (
+	"github.com/tradik/slimjson"
+)
+
+func main() {
+	// Parse specific config file
+	profiles, err := slimjson.ParseConfigFile("/path/to/.slimjson")
+	if err != nil {
+		panic(err)
+	}
+	
+	cfg := profiles["my-profile"]
+	slimmer := slimjson.New(cfg)
+	result := slimmer.Slim(data)
+}
+```
+
+#### Config Structure Reference
+
+```go
+type Config struct {
+	// Basic options
+	MaxDepth        int      // Maximum nesting depth (0 = unlimited)
+	MaxListLength   int      // Maximum array length (0 = unlimited)
+	MaxStringLength int      // Maximum string length (0 = unlimited)
+	StripEmpty      bool     // Remove nulls, empty strings, empty arrays/objects
+	BlockList       []string // List of field names to remove (case-insensitive)
+	
+	// Optimization options
+	DecimalPlaces     int    // Round floats to N decimal places (-1 = no rounding)
+	DeduplicateArrays bool   // Remove duplicate values from arrays
+	SampleStrategy    string // Array sampling: "none", "first_last", "random", "representative"
+	SampleSize        int    // Number of items when sampling (0 = use MaxListLength)
+	
+	// Advanced compression
+	NullCompression          bool   // Track removed null fields in _nulls array
+	TypeInference            bool   // Convert uniform arrays to schema+data format
+	BoolCompression          bool   // Convert booleans to bit flags
+	TimestampCompression     bool   // Convert ISO timestamps to unix timestamps
+	StringPooling            bool   // Deduplicate repeated strings using string pool
+	StringPoolMinOccurrences int    // Minimum occurrences for string pooling (default: 2)
+	NumberDeltaEncoding      bool   // Use delta encoding for sequential numbers
+	NumberDeltaThreshold     int    // Minimum array size for delta encoding (default: 5)
+	EnumDetection            bool   // Convert repeated categorical values to enums
+	EnumMaxValues            int    // Maximum unique values to consider as enum (default: 10)
+}
+```
+
+#### Example: API Response Compression
+
+```go
+package main
+
+import (
+	"encoding/json"
+	"net/http"
+	"github.com/tradik/slimjson"
+)
+
+func apiHandler(w http.ResponseWriter, r *http.Request) {
+	// Get data from database
+	data := fetchDataFromDB()
+	
+	// Configure compression for API response
+	cfg := slimjson.Config{
+		MaxDepth:          5,
+		MaxListLength:     20,
+		StripEmpty:        true,
+		DecimalPlaces:     2,
+		DeduplicateArrays: true,
+		BlockList:         []string{"internal_id", "metadata", "debug"},
+	}
+	
+	// Compress data
+	slimmer := slimjson.New(cfg)
+	compressed := slimmer.Slim(data)
+	
+	// Send response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(compressed)
+}
+```
+
+#### Example: LLM Context Optimization
+
+```go
+package main
+
+import (
+	"encoding/json"
+	"github.com/tradik/slimjson"
+)
+
+func prepareLLMContext(data interface{}) ([]byte, error) {
+	// Maximum compression for LLM context
+	cfg := slimjson.Config{
+		MaxDepth:             4,
+		MaxListLength:        15,
+		StripEmpty:           true,
+		DecimalPlaces:        2,
+		DeduplicateArrays:    true,
+		StringPooling:        true,
+		TypeInference:        true,
+		BoolCompression:      true,
+		TimestampCompression: true,
+		BlockList:            []string{"avatar_url", "url", "html_url"},
+	}
+	
+	slimmer := slimjson.New(cfg)
+	compressed := slimmer.Slim(data)
+	
+	// Convert to JSON for LLM
+	return json.Marshal(compressed)
+}
+```
+
+#### Example: Processing Large Datasets
+
+```go
+package main
+
+import (
+	"encoding/json"
+	"github.com/tradik/slimjson"
+)
+
+func processLargeDataset(records []map[string]interface{}) []byte {
+	// Wrap in container
+	data := map[string]interface{}{
+		"records": records,
+	}
+	
+	// Aggressive compression with sampling
+	cfg := slimjson.Config{
+		MaxDepth:          3,
+		MaxListLength:     100,
+		StripEmpty:        true,
+		DecimalPlaces:     2,
+		SampleStrategy:    "representative",
+		SampleSize:        50,
+		TypeInference:     true,
+		NumberDeltaEncoding: true,
+	}
+	
+	slimmer := slimjson.New(cfg)
+	compressed := slimmer.Slim(data)
+	
+	result, _ := json.Marshal(compressed)
+	return result
 }
 ```
 
