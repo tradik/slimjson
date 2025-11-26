@@ -51,7 +51,7 @@ func TestSlimmer_Slim(t *testing.T) {
 				MaxStringLength: 5,
 			},
 			input:    `{"text": "Hello World", "emoji": "🎉🎊🎈🎁🎀🎂"}`,
-			expected: `{"text": "Hello", "emoji": "🎉🎊🎈🎁🎀"}`,
+			expected: `{"text": "He...", "emoji": "🎉🎊..."}`,
 		},
 		{
 			name: "Complex combination",

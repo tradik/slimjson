@@ -34,3 +34,6 @@ go.work
 .idea/
 .vscode/
 *.iml
+
+# User config files (keep .slimjson.example)
+.slimjson

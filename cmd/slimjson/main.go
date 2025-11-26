@@ -12,51 +12,57 @@ import (
 	"github.com/tradik/slimjson"
 )
 
-// getProfile returns a predefined configuration profile
-func getProfile(name string) slimjson.Config {
-	profiles := map[string]slimjson.Config{
-		"light": {
-			MaxDepth:      10,
-			MaxListLength: 20,
-			StripEmpty:    true,
-		},
-		"medium": {
-			MaxDepth:      5,
-			MaxListLength: 10,
-			StripEmpty:    true,
-		},
-		"aggressive": {
-			MaxDepth:      3,
-			MaxListLength: 5,
-			StripEmpty:    true,
-			BlockList:     []string{"description", "summary", "comment", "notes", "bio", "readme"},
-		},
-		"ai-optimized": {
-			MaxDepth:      4,
-			MaxListLength: 8,
-			StripEmpty:    true,
-			BlockList:     []string{"avatar_url", "gravatar_id", "url", "html_url", "followers_url", "following_url", "gists_url", "starred_url", "subscriptions_url", "organizations_url", "repos_url", "events_url", "received_events_url"},
-		},
+// getProfile returns a configuration profile (built-in or from config file)
+func getProfile(name string, customProfiles map[string]slimjson.Config) slimjson.Config {
+	// First check custom profiles from config file
+	if cfg, ok := customProfiles[strings.ToLower(name)]; ok {
+		return cfg
 	}
 
-	cfg, ok := profiles[strings.ToLower(name)]
-	if !ok {
-		fmt.Fprintf(os.Stderr, "Unknown profile: %s\n", name)
-		fmt.Fprintf(os.Stderr, "Available profiles: light, medium, aggressive, ai-optimized\n")
-		os.Exit(1)
+	// Then check built-in profiles
+	builtinProfiles := slimjson.GetBuiltinProfiles()
+	if cfg, ok := builtinProfiles[strings.ToLower(name)]; ok {
+		return cfg
 	}
-	return cfg
+
+	// Profile not found
+	fmt.Fprintf(os.Stderr, "Unknown profile: %s\n", name)
+	fmt.Fprintf(os.Stderr, "\nBuilt-in profiles: light, medium, aggressive, ai-optimized\n")
+
+	if len(customProfiles) > 0 {
+		fmt.Fprintf(os.Stderr, "\nCustom profiles from .slimjson:\n")
+		for profileName := range customProfiles {
+			fmt.Fprintf(os.Stderr, "  - %s\n", profileName)
+		}
+	}
+
+	os.Exit(1)
+	return slimjson.Config{}
 }
 
 func main() {
 	var (
-		profile         string
-		maxDepth        int
-		maxListLength   int
-		maxStringLength int
-		stripEmpty      bool
-		blockList       string
-		pretty          bool
+		profile                  string
+		maxDepth                 int
+		maxListLength            int
+		maxStringLength          int
+		stripEmpty               bool
+		blockList                string
+		pretty                   bool
+		decimalPlaces            int
+		deduplicateArrays        bool
+		sampleStrategy           string
+		sampleSize               int
+		nullCompression          bool
+		typeInference            bool
+		boolCompression          bool
+		timestampCompression     bool
+		stringPooling            bool
+		stringPoolMinOccurrences int
+		numberDeltaEncoding      bool
+		numberDeltaThreshold     int
+		enumDetection            bool
+		enumMaxValues            int
 	)
 
 	flag.StringVar(&profile, "profile", "", "Use predefined profile: light, medium, aggressive, ai-optimized")
@@ -66,7 +72,28 @@ func main() {
 	flag.BoolVar(&stripEmpty, "strip-empty", true, "Remove nulls, empty strings, empty arrays/objects")
 	flag.StringVar(&blockList, "block", "", "Comma-separated list of field names to remove")
 	flag.BoolVar(&pretty, "pretty", false, "Pretty print output")
+	flag.IntVar(&decimalPlaces, "decimal-places", -1, "Round floats to N decimal places (-1 for no rounding)")
+	flag.BoolVar(&deduplicateArrays, "deduplicate", false, "Remove duplicate values from arrays")
+	flag.StringVar(&sampleStrategy, "sample-strategy", "none", "Array sampling: none, first_last, random, representative")
+	flag.IntVar(&sampleSize, "sample-size", 0, "Number of items when sampling (0 = use list-len)")
+	flag.BoolVar(&nullCompression, "null-compression", false, "Track removed null fields in _nulls array")
+	flag.BoolVar(&typeInference, "type-inference", false, "Convert uniform arrays to schema+data format")
+	flag.BoolVar(&boolCompression, "bool-compression", false, "Convert booleans to bit flags")
+	flag.BoolVar(&timestampCompression, "timestamp-compression", false, "Convert ISO timestamps to unix timestamps")
+	flag.BoolVar(&stringPooling, "string-pooling", false, "Deduplicate repeated strings using string pool")
+	flag.IntVar(&stringPoolMinOccurrences, "string-pool-min", 2, "Minimum occurrences for string pooling")
+	flag.BoolVar(&numberDeltaEncoding, "number-delta", false, "Use delta encoding for sequential numbers")
+	flag.IntVar(&numberDeltaThreshold, "number-delta-threshold", 5, "Minimum array size for delta encoding")
+	flag.BoolVar(&enumDetection, "enum-detection", false, "Convert repeated categorical values to enums")
+	flag.IntVar(&enumMaxValues, "enum-max-values", 10, "Maximum unique values to consider as enum")
 	flag.Parse()
+
+	// Load custom profiles from .slimjson config file
+	customProfiles, err := slimjson.LoadConfigFile()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: Failed to load .slimjson config file: %v\n", err)
+		customProfiles = make(map[string]slimjson.Config)
+	}
 
 	var input io.Reader
 	args := flag.Args()
@@ -95,14 +122,64 @@ func main() {
 	// Apply profile if specified
 	var cfg slimjson.Config
 	if profile != "" {
-		cfg = getProfile(profile)
+		cfg = getProfile(profile, customProfiles)
+		// Allow overriding profile settings with explicit flags
+		if decimalPlaces >= 0 {
+			cfg.DecimalPlaces = decimalPlaces
+		}
+		if deduplicateArrays {
+			cfg.DeduplicateArrays = deduplicateArrays
+		}
+		if sampleStrategy != "none" {
+			cfg.SampleStrategy = sampleStrategy
+			cfg.SampleSize = sampleSize
+		}
+		// Apply advanced optimizations if specified
+		if nullCompression {
+			cfg.NullCompression = nullCompression
+		}
+		if typeInference {
+			cfg.TypeInference = typeInference
+		}
+		if boolCompression {
+			cfg.BoolCompression = boolCompression
+		}
+		if timestampCompression {
+			cfg.TimestampCompression = timestampCompression
+		}
+		if stringPooling {
+			cfg.StringPooling = stringPooling
+			cfg.StringPoolMinOccurrences = stringPoolMinOccurrences
+		}
+		if numberDeltaEncoding {
+			cfg.NumberDeltaEncoding = numberDeltaEncoding
+			cfg.NumberDeltaThreshold = numberDeltaThreshold
+		}
+		if enumDetection {
+			cfg.EnumDetection = enumDetection
+			cfg.EnumMaxValues = enumMaxValues
+		}
 	} else {
 		// Use custom parameters
 		cfg = slimjson.Config{
-			MaxDepth:        maxDepth,
-			MaxListLength:   maxListLength,
-			MaxStringLength: maxStringLength,
-			StripEmpty:      stripEmpty,
+			MaxDepth:                 maxDepth,
+			MaxListLength:            maxListLength,
+			MaxStringLength:          maxStringLength,
+			StripEmpty:               stripEmpty,
+			DecimalPlaces:            decimalPlaces,
+			DeduplicateArrays:        deduplicateArrays,
+			SampleStrategy:           sampleStrategy,
+			SampleSize:               sampleSize,
+			NullCompression:          nullCompression,
+			TypeInference:            typeInference,
+			BoolCompression:          boolCompression,
+			TimestampCompression:     timestampCompression,
+			StringPooling:            stringPooling,
+			StringPoolMinOccurrences: stringPoolMinOccurrences,
+			NumberDeltaEncoding:      numberDeltaEncoding,
+			NumberDeltaThreshold:     numberDeltaThreshold,
+			EnumDetection:            enumDetection,
+			EnumMaxValues:            enumMaxValues,
 		}
 		if blockList != "" {
 			cfg.BlockList = strings.Split(blockList, ",")

@@ -112,6 +112,71 @@ sudo mv bin/slimjson /usr/local/bin/
 
 ## Usage 🚀
 
+### Configuration File
+
+SlimJSON supports a `.slimjson` configuration file for defining custom profiles. The file is searched in:
+1. Current directory (`./.slimjson`)
+2. User home directory (`~/.slimjson`)
+
+**Format:**
+```ini
+# Comments start with # or //
+[profile-name]
+parameter=value
+
+[another-profile]
+parameter=value
+```
+
+**Example `.slimjson`:**
+```ini
+# Custom profile for API responses
+[api-response]
+depth=5
+list-len=20
+strip-empty=true
+decimal-places=2
+deduplicate=true
+block=metadata,debug,trace
+
+# Custom profile for LLM context
+[llm-context]
+depth=4
+list-len=15
+strip-empty=true
+string-pooling=true
+type-inference=true
+bool-compression=true
+block=avatar_url,url,html_url
+
+# Maximum compression
+[maximum]
+depth=3
+list-len=5
+strip-empty=true
+decimal-places=2
+deduplicate=true
+sample-strategy=first_last
+sample-size=10
+null-compression=true
+type-inference=true
+bool-compression=true
+timestamp-compression=true
+string-pooling=true
+number-delta=true
+enum-detection=true
+```
+
+**Using custom profiles:**
+```bash
+slimjson -profile api-response data.json
+slimjson -profile llm-context data.json
+```
+
+**Note:** Custom profiles take precedence over built-in profiles. If a parameter is not specified, it defaults to the zero value (disabled).
+
+See [.slimjson.example](.slimjson.example) for a complete configuration file with all available parameters.
+
 ### CLI
 
 The `slimjson` CLI reads JSON from stdin or a file and outputs the slimmed JSON to stdout.
@@ -140,17 +205,66 @@ slimjson -depth 3 -list-len 5 input.json > output.json
 
 # Read from stdin
 cat input.json | slimjson -strip-empty=true -block "password,secret"
+
+# Round numbers and remove duplicates
+slimjson -decimal-places 2 -deduplicate data.json
+
+# Sample large arrays - keep first 5 and last 5
+slimjson -sample-strategy first_last -sample-size 10 data.json
+
+# Representative sampling - evenly distributed
+slimjson -sample-strategy representative -sample-size 20 data.json
+
+# Combine with profile
+slimjson -profile medium -decimal-places 2 -deduplicate data.json
+
+# Advanced compression - all optimizations
+slimjson -string-pooling -enum-detection -timestamp-compression data.json
+
+# Maximum compression (use all features)
+slimjson -profile ai-optimized \
+  -decimal-places 2 \
+  -deduplicate \
+  -sample-strategy representative \
+  -sample-size 50 \
+  -null-compression \
+  -type-inference \
+  -bool-compression \
+  -timestamp-compression \
+  -string-pooling \
+  -number-delta \
+  -enum-detection \
+  data.json
 ```
 
 **Flags:**
 
+**Basic Options:**
 - `-profile string`: Use predefined profile: `light`, `medium`, `aggressive`, `ai-optimized`
-- `-depth int`: Maximum nesting depth (default 5). 0 for unlimited.
-- `-list-len int`: Maximum list length (default 10). 0 for unlimited.
-- `-string-len int`: Maximum string length in characters/runes (default 0 = unlimited). UTF-8 aware.
-- `-strip-empty`: Remove nulls, empty strings, empty arrays/objects (default true).
-- `-block string`: Comma-separated list of field names to remove.
-- `-pretty`: Pretty print output.
+- `-depth int`: Maximum nesting depth (default: 5, 0 = unlimited)
+- `-list-len int`: Maximum list length (default: 10, 0 = unlimited)
+- `-string-len int`: Maximum string length in characters/runes (default: 0 = unlimited)
+- `-strip-empty`: Remove nulls, empty strings, empty arrays/objects (default: true)
+- `-block string`: Comma-separated list of field names to remove
+- `-pretty`: Pretty print output
+
+**Optimization Options:**
+- `-decimal-places int`: Round floats to N decimal places (default: -1 = no rounding)
+- `-deduplicate`: Remove duplicate values from arrays (default: false)
+- `-sample-strategy string`: Array sampling: `none`, `first_last`, `random`, `representative` (default: `none`)
+- `-sample-size int`: Number of items when sampling (default: 0 = use list-len)
+
+**Advanced Compression:**
+- `-null-compression`: Track removed null fields in _nulls array (default: false)
+- `-type-inference`: Convert uniform arrays to schema+data format (default: false)
+- `-bool-compression`: Convert booleans to bit flags (default: false)
+- `-timestamp-compression`: Convert ISO timestamps to unix timestamps (default: false)
+- `-string-pooling`: Deduplicate repeated strings using string pool (default: false)
+- `-string-pool-min int`: Minimum occurrences for string pooling (default: 2)
+- `-number-delta`: Use delta encoding for sequential numbers (default: false)
+- `-number-delta-threshold int`: Minimum array size for delta encoding (default: 5)
+- `-enum-detection`: Convert repeated categorical values to enums (default: false)
+- `-enum-max-values int`: Maximum unique values to consider as enum (default: 10)
 
 **Profile Details:**
 
@@ -160,6 +274,21 @@ cat input.json | slimjson -strip-empty=true -block "password,secret"
 | **Medium** | 5 | 10 | none | Balanced reduction |
 | **Aggressive** | 3 | 5 | description, summary, comment, notes, bio, readme | Remove verbose text fields |
 | **AI-Optimized** | 4 | 8 | avatar_url, gravatar_id, url, html_url, *_url | Remove URLs and metadata |
+
+**Default Values Summary:**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `-depth` | 5 | Maximum nesting depth |
+| `-list-len` | 10 | Maximum array length |
+| `-string-len` | 0 | No string truncation (unlimited) |
+| `-strip-empty` | true | Remove empty values |
+| `-decimal-places` | -1 | No rounding |
+| `-sample-strategy` | none | No sampling |
+| `-sample-size` | 0 | Use list-len value |
+| `-string-pool-min` | 2 | Min occurrences for pooling |
+| `-number-delta-threshold` | 5 | Min array size for delta |
+| `-enum-max-values` | 10 | Max unique values for enum |
 
 **Note**: Profiles do NOT truncate strings to preserve data integrity. Use `-string-len` manually if needed, but be aware this may lose information.
 

@@ -1,0 +1,88 @@
+# SlimJSON Configuration File
+# Place this file as .slimjson in your project directory or home directory
+# Format: [profile-name] followed by key=value pairs
+# Lines starting with # are comments
+
+# Custom profile for API responses
+[api-response]
+depth=5
+list-len=20
+strip-empty=true
+decimal-places=2
+deduplicate=true
+block=metadata,debug,trace
+
+# Custom profile for database exports
+[database-export]
+depth=10
+list-len=100
+strip-empty=false
+decimal-places=4
+string-pooling=true
+string-pool-min=3
+
+# Custom profile for LLM context
+[llm-context]
+depth=4
+list-len=15
+strip-empty=true
+decimal-places=2
+deduplicate=true
+string-pooling=true
+type-inference=true
+bool-compression=true
+timestamp-compression=true
+block=avatar_url,gravatar_id,url,html_url
+
+# Custom profile for analytics data
+[analytics]
+depth=3
+list-len=50
+decimal-places=2
+number-delta=true
+number-delta-threshold=10
+sample-strategy=representative
+sample-size=100
+
+# Minimal profile - only essential compression
+[minimal]
+depth=10
+list-len=50
+strip-empty=true
+
+# Maximum compression - all features enabled
+[maximum]
+depth=3
+list-len=5
+strip-empty=true
+decimal-places=2
+deduplicate=true
+sample-strategy=first_last
+sample-size=10
+null-compression=true
+type-inference=true
+bool-compression=true
+timestamp-compression=true
+string-pooling=true
+string-pool-min=2
+number-delta=true
+number-delta-threshold=5
+enum-detection=true
+enum-max-values=10
+block=description,summary,comment,notes,bio,readme,avatar_url,url
+
+# Development profile - preserve most data
+[development]
+depth=20
+list-len=100
+strip-empty=false
+decimal-places=-1
+
+# Production profile - balanced compression
+[production]
+depth=5
+list-len=20
+strip-empty=true
+decimal-places=2
+deduplicate=true
+string-pooling=true
