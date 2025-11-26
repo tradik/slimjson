@@ -1,9 +1,11 @@
-name: Deploy GitHub Pages
+# Backup workflow - zmień nazwę na pages.yml jeśli chcesz użyć
+# Najpierw MUSISZ włączyć Pages w Settings!
+
+name: GitHub Pages
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -12,12 +14,15 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: false
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,22 +30,15 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
         
-      - name: Build with Jekyll
+      - name: Build
         uses: actions/jekyll-build-pages@v1
         with:
           source: ./
           destination: ./_site
           
-      - name: Upload artifact
+      - name: Upload
         uses: actions/upload-pages-artifact@v3
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
+        
+      - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
