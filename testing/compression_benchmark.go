@@ -61,34 +61,31 @@ func main() {
 		{
 			Name: "Medium",
 			Config: slimjson.Config{
-				MaxDepth:        5,
-				MaxListLength:   10,
-				MaxStringLength: 200,
-				StripEmpty:      true,
+				MaxDepth:      5,
+				MaxListLength: 10,
+				StripEmpty:    true,
 			},
 			Description: "Medium compression - balanced reduction",
 		},
 		{
 			Name: "Aggressive",
 			Config: slimjson.Config{
-				MaxDepth:        3,
-				MaxListLength:   5,
-				MaxStringLength: 100,
-				StripEmpty:      true,
-				BlockList:       []string{"description", "summary", "comment", "notes"},
+				MaxDepth:      3,
+				MaxListLength: 5,
+				StripEmpty:    true,
+				BlockList:     []string{"description", "summary", "comment", "notes", "bio", "readme"},
 			},
-			Description: "Aggressive compression - maximum reduction",
+			Description: "Aggressive compression - removes verbose fields",
 		},
 		{
 			Name: "AI-Optimized",
 			Config: slimjson.Config{
-				MaxDepth:        4,
-				MaxListLength:   8,
-				MaxStringLength: 150,
-				StripEmpty:      true,
-				BlockList:       []string{"gravatar_id", "avatar_url", "url", "html_url"},
+				MaxDepth:      4,
+				MaxListLength: 8,
+				StripEmpty:    true,
+				BlockList:     []string{"avatar_url", "gravatar_id", "url", "html_url", "followers_url", "following_url", "gists_url", "starred_url", "subscriptions_url", "organizations_url", "repos_url", "events_url", "received_events_url"},
 			},
-			Description: "Optimized for AI/LLM token reduction",
+			Description: "Optimized for AI/LLM - removes URLs and metadata",
 		},
 	}
 

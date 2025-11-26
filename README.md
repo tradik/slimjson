@@ -116,6 +116,24 @@ sudo mv bin/slimjson /usr/local/bin/
 
 The `slimjson` CLI reads JSON from stdin or a file and outputs the slimmed JSON to stdout.
 
+#### Using Predefined Profiles (Recommended)
+
+```bash
+# Light compression - preserve most data
+slimjson -profile light input.json > output.json
+
+# Medium compression - balanced reduction
+slimjson -profile medium input.json > output.json
+
+# Aggressive compression - maximum reduction
+slimjson -profile aggressive input.json > output.json
+
+# AI-Optimized - optimized for LLM token reduction
+slimjson -profile ai-optimized input.json > output.json
+```
+
+#### Custom Parameters
+
 ```bash
 # Read from file
 slimjson -depth 3 -list-len 5 input.json > output.json
@@ -126,12 +144,24 @@ cat input.json | slimjson -strip-empty=true -block "password,secret"
 
 **Flags:**
 
+- `-profile string`: Use predefined profile: `light`, `medium`, `aggressive`, `ai-optimized`
 - `-depth int`: Maximum nesting depth (default 5). 0 for unlimited.
 - `-list-len int`: Maximum list length (default 10). 0 for unlimited.
 - `-string-len int`: Maximum string length in characters/runes (default 0 = unlimited). UTF-8 aware.
 - `-strip-empty`: Remove nulls, empty strings, empty arrays/objects (default true).
 - `-block string`: Comma-separated list of field names to remove.
 - `-pretty`: Pretty print output.
+
+**Profile Details:**
+
+| Profile | MaxDepth | MaxListLength | BlockList | Strategy |
+|---------|----------|---------------|-----------|----------|
+| **Light** | 10 | 20 | none | Preserve data, limit depth/lists |
+| **Medium** | 5 | 10 | none | Balanced reduction |
+| **Aggressive** | 3 | 5 | description, summary, comment, notes, bio, readme | Remove verbose text fields |
+| **AI-Optimized** | 4 | 8 | avatar_url, gravatar_id, url, html_url, *_url | Remove URLs and metadata |
+
+**Note**: Profiles do NOT truncate strings to preserve data integrity. Use `-string-len` manually if needed, but be aware this may lose information.
 
 📚 **See [EXAMPLES.md](EXAMPLES.md) for detailed usage examples and common patterns.**
 
@@ -238,13 +268,13 @@ Real-world compression tests on various JSON files:
 | File | Original Size | Config | Compressed Size | Reduction | Reduction % | Original Tokens | Compressed Tokens | Token Reduction % |
 |------|---------------|--------|-----------------|-----------|-------------|-----------------|-------------------|-------------------|
 | resume.json | 28.2 KB | Light | 21.4 KB | 6.8 KB | 24.2% | 7230 | 5478 | 24.2% |
-| resume.json | 28.2 KB | Medium | 18.8 KB | 9.5 KB | 33.5% | 7230 | 4805 | 33.5% |
+| resume.json | 28.2 KB | Medium | 18.9 KB | 9.3 KB | 33.1% | 7230 | 4841 | 33.0% |
 | resume.json | 28.2 KB | Aggressive | 530 B | 27.7 KB | 98.2% | 7230 | 133 | 98.2% |
-| resume.json | 28.2 KB | AI-Optimized | 11.2 KB | 17.1 KB | 60.5% | 7230 | 2859 | 60.5% |
+| resume.json | 28.2 KB | AI-Optimized | 11.4 KB | 16.8 KB | 59.5% | 7230 | 2928 | 59.5% |
 | schema-resume.json | 24.8 KB | Light | 17.9 KB | 7.0 KB | 28.0% | 6359 | 4579 | 28.0% |
-| schema-resume.json | 24.8 KB | Medium | 15.2 KB | 9.7 KB | 38.9% | 6359 | 3887 | 38.9% |
+| schema-resume.json | 24.8 KB | Medium | 15.3 KB | 9.5 KB | 38.3% | 6359 | 3922 | 38.3% |
 | schema-resume.json | 24.8 KB | Aggressive | 530 B | 24.3 KB | 97.9% | 6359 | 133 | 97.9% |
-| schema-resume.json | 24.8 KB | AI-Optimized | 9.2 KB | 15.6 KB | 62.9% | 6359 | 2358 | 62.9% |
+| schema-resume.json | 24.8 KB | AI-Optimized | 9.5 KB | 15.4 KB | 61.8% | 6359 | 2427 | 61.8% |
 | users.json | 5.5 KB | Light | 4.0 KB | 1.5 KB | 27.5% | 1412 | 1024 | 27.5% |
 | users.json | 5.5 KB | Medium | 4.0 KB | 1.5 KB | 27.5% | 1412 | 1024 | 27.5% |
 | users.json | 5.5 KB | Aggressive | 691 B | 4.8 KB | 87.8% | 1412 | 173 | 87.7% |
@@ -257,9 +287,9 @@ Real-world compression tests on various JSON files:
 ### Configuration Profiles
 
 - **Light**: `MaxDepth: 10, MaxListLength: 20, StripEmpty: true` - Preserves most data structure
-- **Medium**: `MaxDepth: 5, MaxListLength: 10, MaxStringLength: 200, StripEmpty: true` - Balanced compression
-- **Aggressive**: `MaxDepth: 3, MaxListLength: 5, MaxStringLength: 100, StripEmpty: true` - Maximum size reduction
-- **AI-Optimized**: `MaxDepth: 4, MaxListLength: 8, MaxStringLength: 150, StripEmpty: true` - Optimized for LLM token reduction
+- **Medium**: `MaxDepth: 5, MaxListLength: 10, StripEmpty: true` - Balanced compression
+- **Aggressive**: `MaxDepth: 3, MaxListLength: 5, StripEmpty: true, BlockList: [description, summary, comment, notes, bio, readme]` - Removes verbose text fields
+- **AI-Optimized**: `MaxDepth: 4, MaxListLength: 8, StripEmpty: true, BlockList: [*_url fields]` - Removes URLs and metadata for LLM optimization
 
 ### Performance Benchmarks
 

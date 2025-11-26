@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **CLI Predefined Profiles**: New `-profile` flag with 4 predefined compression profiles:
+  - `light`: Light compression, preserves most data (MaxDepth: 10, MaxListLength: 20)
+  - `medium`: Balanced compression (MaxDepth: 5, MaxListLength: 10)
+  - `aggressive`: Removes verbose text fields (MaxDepth: 3, MaxListLength: 5, BlockList: description, summary, etc.)
+  - `ai-optimized`: Removes URLs and metadata (MaxDepth: 4, MaxListLength: 8, BlockList: *_url fields)
+- **String Truncation with Ellipsis**: Truncated strings now end with `...` to indicate content was cut
+
+### Changed
+- **Profiles no longer truncate strings** to preserve data integrity - use BlockList instead to remove entire unnecessary fields
 - Comprehensive compression testing suite in `testing/` directory
 - Three real-world JSON test files (resume.json, schema-resume.json, users.json)
 - Compression benchmark tool (`compression_benchmark.go`) with detailed metrics

@@ -90,7 +90,7 @@ func (s *Slimmer) prune(data interface{}, depth int) interface{} {
 
 			newMap[k] = prunedV
 		}
-		
+
 		if s.Config.StripEmpty && len(newMap) == 0 {
 			return nil
 		}
@@ -134,6 +134,10 @@ func (s *Slimmer) prune(data interface{}, depth int) interface{} {
 		if s.Config.MaxStringLength > 0 {
 			runes := []rune(str)
 			if len(runes) > s.Config.MaxStringLength {
+				// Truncate and add ellipsis to indicate truncation
+				if s.Config.MaxStringLength > 3 {
+					return string(runes[:s.Config.MaxStringLength-3]) + "..."
+				}
 				return string(runes[:s.Config.MaxStringLength])
 			}
 		}

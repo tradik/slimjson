@@ -12,8 +12,45 @@ import (
 	"github.com/tradik/slimjson"
 )
 
+// getProfile returns a predefined configuration profile
+func getProfile(name string) slimjson.Config {
+	profiles := map[string]slimjson.Config{
+		"light": {
+			MaxDepth:      10,
+			MaxListLength: 20,
+			StripEmpty:    true,
+		},
+		"medium": {
+			MaxDepth:      5,
+			MaxListLength: 10,
+			StripEmpty:    true,
+		},
+		"aggressive": {
+			MaxDepth:      3,
+			MaxListLength: 5,
+			StripEmpty:    true,
+			BlockList:     []string{"description", "summary", "comment", "notes", "bio", "readme"},
+		},
+		"ai-optimized": {
+			MaxDepth:      4,
+			MaxListLength: 8,
+			StripEmpty:    true,
+			BlockList:     []string{"avatar_url", "gravatar_id", "url", "html_url", "followers_url", "following_url", "gists_url", "starred_url", "subscriptions_url", "organizations_url", "repos_url", "events_url", "received_events_url"},
+		},
+	}
+
+	cfg, ok := profiles[strings.ToLower(name)]
+	if !ok {
+		fmt.Fprintf(os.Stderr, "Unknown profile: %s\n", name)
+		fmt.Fprintf(os.Stderr, "Available profiles: light, medium, aggressive, ai-optimized\n")
+		os.Exit(1)
+	}
+	return cfg
+}
+
 func main() {
 	var (
+		profile         string
 		maxDepth        int
 		maxListLength   int
 		maxStringLength int
@@ -22,6 +59,7 @@ func main() {
 		pretty          bool
 	)
 
+	flag.StringVar(&profile, "profile", "", "Use predefined profile: light, medium, aggressive, ai-optimized")
 	flag.IntVar(&maxDepth, "depth", 5, "Maximum nesting depth (0 for unlimited)")
 	flag.IntVar(&maxListLength, "list-len", 10, "Maximum list length (0 for unlimited)")
 	flag.IntVar(&maxStringLength, "string-len", 0, "Maximum string length in characters/runes (0 for unlimited)")
@@ -54,14 +92,21 @@ func main() {
 		os.Exit(1)
 	}
 
-	cfg := slimjson.Config{
-		MaxDepth:        maxDepth,
-		MaxListLength:   maxListLength,
-		MaxStringLength: maxStringLength,
-		StripEmpty:      stripEmpty,
-	}
-	if blockList != "" {
-		cfg.BlockList = strings.Split(blockList, ",")
+	// Apply profile if specified
+	var cfg slimjson.Config
+	if profile != "" {
+		cfg = getProfile(profile)
+	} else {
+		// Use custom parameters
+		cfg = slimjson.Config{
+			MaxDepth:        maxDepth,
+			MaxListLength:   maxListLength,
+			MaxStringLength: maxStringLength,
+			StripEmpty:      stripEmpty,
+		}
+		if blockList != "" {
+			cfg.BlockList = strings.Split(blockList, ",")
+		}
 	}
 
 	slimmer := slimjson.New(cfg)
