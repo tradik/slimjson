@@ -4,6 +4,7 @@
 [![License](https://img.shields.io/badge/License-BSD--3-blue.svg)](LICENSE)
 [![CI/CD](https://github.com/tradik/slimjson/workflows/CI/CD/badge.svg)](https://github.com/tradik/slimjson/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/tradik/slimjson)](https://goreportcard.com/report/github.com/tradik/slimjson)
+[![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://tradik.github.io/slimjson/)
 
 `slimjson` is a Go tool and library designed to "slim down" JSON data before sending it to AI models or other bandwidth-constrained systems. It removes unnecessary fields, truncates deep nesting, shortens lists and strings, and strips empty values to create an optimized "diet" version of your JSON.
 

@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Makefile targets: `make bench` and `make compression-test`
 - Shell script `run_tests.sh` for easy test execution
 - Documentation files: EXAMPLES.md, QUICK_START.md, TESTING_SUMMARY.md
+- **GitHub Pages** with Jekyll and Cayman theme for documentation
+- Automatic deployment via GitHub Actions
 
 ### Changed
 - Updated README with comprehensive compression results and benchmarks

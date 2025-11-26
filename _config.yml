@@ -1,0 +1,59 @@
+title: SlimJSON
+description: Slim down JSON data for AI models and bandwidth-constrained systems
+theme: jekyll-theme-cayman
+show_downloads: true
+
+# GitHub repository
+github:
+  repository_url: https://github.com/tradik/slimjson
+  zip_url: https://github.com/tradik/slimjson/zipball/main
+  tar_url: https://github.com/tradik/slimjson/tarball/main
+
+# Plugins
+plugins:
+  - jekyll-relative-links
+  - jekyll-optional-front-matter
+  - jekyll-readme-index
+  - jekyll-titles-from-headings
+
+# Relative links configuration
+relative_links:
+  enabled: true
+  collections: true
+
+# Optional front matter
+optional_front_matter:
+  remove_originals: true
+
+# README index
+readme_index:
+  enabled: true
+  remove_originals: false
+
+# Titles from headings
+titles_from_headings:
+  enabled: true
+  strip_title: true
+  collections: true
+
+# Exclude from processing
+exclude:
+  - vendor
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - bin
+  - testing/fixtures
+  - cmd
+  - "*.go"
+  - "*.sum"
+  - "*.mod"
+  - Dockerfile
+  - docker-compose.yml
+  - Makefile
+  - .git
+  - .github
+  - .gitignore
+  - .dockerignore
+  - .golangci.yml
+  - LICENSE

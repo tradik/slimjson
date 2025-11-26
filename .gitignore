@@ -20,6 +20,13 @@ testing/compression_benchmark
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
+# Jekyll
+_site/
+.sass-cache/
+.jekyll-cache/
+.jekyll-metadata
+Gemfile.lock
+
 # Go workspace file
 go.work
 
