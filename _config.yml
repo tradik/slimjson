@@ -13,7 +13,6 @@ github:
 plugins:
   - jekyll-relative-links
   - jekyll-optional-front-matter
-  - jekyll-readme-index
   - jekyll-titles-from-headings
 
 # Relative links configuration
@@ -25,12 +24,7 @@ relative_links:
 optional_front_matter:
   remove_originals: true
 
-# README index - use README.md as homepage
-readme_index:
-  enabled: true
-  remove_originals: true
-  
-# Include README.md in the build
+# Include files in the build
 include:
   - README.md
   - EXAMPLES.md
