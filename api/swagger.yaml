@@ -1,0 +1,271 @@
+openapi: 3.0.3
+info:
+  title: SlimJSON API
+  description: |
+    SlimJSON HTTP API for JSON compression and optimization.
+    
+    SlimJSON is a tool designed to "slim down" JSON data before sending it to AI models 
+    or other bandwidth-constrained systems. It removes unnecessary fields, truncates deep 
+    nesting, shortens lists and strings, and strips empty values.
+    
+    ## Features
+    - Multiple compression profiles (light, medium, aggressive, ai-optimized)
+    - Custom profiles via configuration file
+    - Advanced compression options (string pooling, type inference, etc.)
+    - RESTful API for easy integration
+    
+    ## GitHub
+    https://github.com/tradik/slimjson
+  version: 1.0.0
+  contact:
+    name: SlimJSON
+    url: https://github.com/tradik/slimjson
+  license:
+    name: BSD-3-Clause
+    url: https://github.com/tradik/slimjson/blob/main/LICENSE
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: http://localhost:3000
+    description: Alternative local server
+
+tags:
+  - name: health
+    description: Health check and monitoring
+  - name: profiles
+    description: Profile management and discovery
+  - name: compression
+    description: JSON compression operations
+
+paths:
+  /health:
+    get:
+      tags:
+        - health
+      summary: Health check
+      description: Returns the health status of the service
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: ok
+                version: "1.0"
+
+  /profiles:
+    get:
+      tags:
+        - profiles
+      summary: List available profiles
+      description: Returns all available compression profiles (built-in and custom)
+      operationId: getProfiles
+      responses:
+        '200':
+          description: List of profiles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfilesResponse'
+              example:
+                builtin:
+                  - light
+                  - medium
+                  - aggressive
+                  - ai-optimized
+                custom:
+                  - my-custom-profile
+                  - api-response
+
+  /slim:
+    post:
+      tags:
+        - compression
+      summary: Compress JSON
+      description: |
+        Compresses JSON data using the specified profile or default settings.
+        
+        ## Profiles
+        - **light**: Light compression, preserves most data (MaxDepth: 10, MaxListLength: 20)
+        - **medium**: Balanced compression (MaxDepth: 5, MaxListLength: 10)
+        - **aggressive**: Maximum reduction (MaxDepth: 3, MaxListLength: 5, removes verbose fields)
+        - **ai-optimized**: Optimized for LLM contexts (MaxDepth: 4, MaxListLength: 8, removes URLs)
+        
+        ## Custom Profiles
+        You can define custom profiles in a `.slimjson` configuration file.
+      operationId: compressJSON
+      parameters:
+        - name: profile
+          in: query
+          description: Profile name to use for compression
+          required: false
+          schema:
+            type: string
+            enum:
+              - light
+              - medium
+              - aggressive
+              - ai-optimized
+          example: medium
+      requestBody:
+        description: JSON data to compress
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Any valid JSON object or array
+            examples:
+              simple:
+                summary: Simple object
+                value:
+                  users:
+                    - id: 1
+                      name: Alice
+                      email: alice@example.com
+                    - id: 2
+                      name: Bob
+                      email: bob@example.com
+              complex:
+                summary: Complex nested object
+                value:
+                  data:
+                    users:
+                      - id: 1
+                        name: Alice
+                        profile:
+                          bio: "Long biography text..."
+                          avatar_url: "https://example.com/avatar.jpg"
+                        verified: true
+                    metadata:
+                      total: 100
+                      page: 1
+                  prices:
+                    - 19.999
+                    - 29.123
+                    - 39.456
+      responses:
+        '200':
+          description: Compressed JSON
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Compressed JSON object
+              examples:
+                simple:
+                  summary: Simple compression result
+                  value:
+                    users:
+                      - id: 1
+                        name: Alice
+                        email: alice@example.com
+                      - id: 2
+                        name: Bob
+                        email: bob@example.com
+                advanced:
+                  summary: Advanced compression with metadata
+                  value:
+                    data:
+                      users:
+                        - id: 1
+                          name: Alice
+                          verified: true
+                    prices:
+                      - 20
+                      - 29.12
+                      - 39.46
+                    _strings:
+                      - alice@example.com
+        '400':
+          description: Bad request (invalid JSON or unknown profile)
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                invalidJSON:
+                  summary: Invalid JSON
+                  value: "Invalid JSON: unexpected end of JSON input"
+                unknownProfile:
+                  summary: Unknown profile
+                  value: "Unknown profile: nonexistent"
+        '405':
+          description: Method not allowed (only POST is supported)
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: "Method not allowed"
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Health status
+          enum:
+            - ok
+          example: ok
+        version:
+          type: string
+          description: API version
+          example: "1.0"
+      required:
+        - status
+        - version
+
+    ProfilesResponse:
+      type: object
+      properties:
+        builtin:
+          type: array
+          description: Built-in compression profiles
+          items:
+            type: string
+          example:
+            - light
+            - medium
+            - aggressive
+            - ai-optimized
+        custom:
+          type: array
+          description: Custom profiles from configuration file
+          items:
+            type: string
+          example:
+            - my-custom-profile
+      required:
+        - builtin
+        - custom
+
+  examples:
+    LightProfile:
+      summary: Light compression
+      description: Preserves most data, only limits depth and list length
+      value:
+        profile: light
+        
+    MediumProfile:
+      summary: Medium compression
+      description: Balanced compression for general use
+      value:
+        profile: medium
+        
+    AggressiveProfile:
+      summary: Aggressive compression
+      description: Maximum reduction, removes verbose fields
+      value:
+        profile: aggressive
+        
+    AIOptimizedProfile:
+      summary: AI-optimized compression
+      description: Optimized for LLM contexts, removes URLs and metadata
+      value:
+        profile: ai-optimized

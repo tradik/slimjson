@@ -20,7 +20,10 @@ permalink: /
 
 - 📖 [CLI Examples](EXAMPLES.md) - Command-line usage examples
 - 💻 [Library Guide](LIBRARY_EXAMPLES.md) - Complete guide for developers using SlimJSON as a Go library
+- 🌐 [HTTP API Documentation](api/README.md) - REST API reference and integration examples
+- 📋 [OpenAPI Specification](api/swagger.yaml) - Swagger/OpenAPI 3.0 spec for API
 - ⚙️ [Configuration File](.slimjson.example) - Custom profiles with `.slimjson` file
+- 📦 [Go Package Documentation](https://pkg.go.dev/github.com/tradik/slimjson) - Full API reference
 - 🧪 [Testing Methodology](testing/METHODOLOGY.md) - Compression testing details
 
 ## Features ⚡

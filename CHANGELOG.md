@@ -25,6 +25,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Comprehensive help with all options
   - Examples for common use cases
   - API documentation for daemon mode
+- **API Documentation**: Complete REST API documentation
+  - OpenAPI 3.0 specification (Swagger)
+  - API reference with examples
+  - Integration guides for Python, JavaScript, Go
+  - Docker and Kubernetes deployment examples
+- **Package Documentation**: Comprehensive Go package documentation
+  - Full API reference for pkg.go.dev
+  - Usage examples and best practices
+  - Real-world integration patterns
+  - Thread safety guarantees
+- **HTTP API Tests**: Complete test suite for daemon mode
+  - Health endpoint tests
+  - Profiles endpoint tests
+  - Compression endpoint tests with multiple scenarios
+  - Error handling tests
+  - Config priority tests
 - **Configuration File Support**: `.slimjson` configuration file for custom profiles
   - Searches in current directory and user home directory
   - Simple INI-style format: `[profile-name]` followed by `key=value` pairs
