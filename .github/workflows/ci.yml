@@ -48,6 +48,8 @@ jobs:
             arch: arm64
           - os: freebsd
             arch: amd64
+          - os: freebsd
+            arch: arm64
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6

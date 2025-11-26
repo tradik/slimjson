@@ -68,7 +68,11 @@ You can download the latest pre-built binaries for Linux, macOS, and FreeBSD fro
 
 1. Download the binary:
    ```bash
+   # For amd64
    fetch -o slimjson https://github.com/tradik/slimjson/releases/latest/download/slimjson-freebsd-amd64
+   
+   # For arm64
+   fetch -o slimjson https://github.com/tradik/slimjson/releases/latest/download/slimjson-freebsd-arm64
    ```
 2. Make it executable:
    ```bash
