@@ -10,7 +10,7 @@ COLOR_BLUE=\033[34m
 COLOR_YELLOW=\033[33m
 COLOR_CYAN=\033[36m
 
-.PHONY: all build test lint clean docker-build docker-run podman-build podman-run
+.PHONY: all build test lint clean docker-build docker-run podman-build podman-run bench compression-test
 
 all: lint test build
 
@@ -24,6 +24,16 @@ test:
 	@echo "$(COLOR_BOLD)$(COLOR_YELLOW)🧪 Running tests...$(COLOR_RESET)"
 	@go test -v ./...
 	@echo "$(COLOR_GREEN)✅ Tests passed$(COLOR_RESET)"
+
+bench:
+	@echo "$(COLOR_BOLD)$(COLOR_YELLOW)⚡ Running benchmarks...$(COLOR_RESET)"
+	@go test -bench=. -benchmem -benchtime=3s
+	@echo "$(COLOR_GREEN)✅ Benchmarks complete$(COLOR_RESET)"
+
+compression-test:
+	@echo "$(COLOR_BOLD)$(COLOR_YELLOW)📊 Running compression tests...$(COLOR_RESET)"
+	@cd testing && go run compression_benchmark.go
+	@echo "$(COLOR_GREEN)✅ Compression tests complete$(COLOR_RESET)"
 
 lint:
 	@echo "$(COLOR_BOLD)$(COLOR_CYAN)🔍 Linting...$(COLOR_RESET)"
