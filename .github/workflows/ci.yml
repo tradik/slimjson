@@ -3,8 +3,22 @@ name: CI/CD
 on:
   push:
     branches: [ main ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'cmd/**'
+      - 'Dockerfile'
+      - '.github/workflows/ci.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'cmd/**'
+      - 'Dockerfile'
+      - '.github/workflows/ci.yml'
 
 jobs:
   lint:
