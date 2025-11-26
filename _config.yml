@@ -25,10 +25,19 @@ relative_links:
 optional_front_matter:
   remove_originals: true
 
-# README index
+# README index - use README.md as homepage
 readme_index:
   enabled: true
   remove_originals: false
+  
+# Include README.md in the build
+include:
+  - README.md
+  - EXAMPLES.md
+  - CHANGELOG.md
+  - QUICK_START.md
+  - testing/README.md
+  - testing/METHODOLOGY.md
 
 # Titles from headings
 titles_from_headings:
