@@ -1,18 +1,23 @@
-# slimjson
+# slimjson 🎯
+
+[![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![License](https://img.shields.io/badge/License-BSD--3-blue.svg)](LICENSE)
+[![CI/CD](https://github.com/tradik/slimjson/workflows/CI/CD/badge.svg)](https://github.com/tradik/slimjson/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/tradik/slimjson)](https://goreportcard.com/report/github.com/tradik/slimjson)
 
 `slimjson` is a Go tool and library designed to "slim down" JSON data before sending it to AI models or other bandwidth-constrained systems. It removes unnecessary fields, truncates deep nesting, shortens lists and strings, and strips empty values to create an optimized "diet" version of your JSON.
 
-Perfect for reducing token usage when sending large JSON payloads to LLMs and AI APIs.
+✨ Perfect for reducing token usage when sending large JSON payloads to LLMs and AI APIs.
 
-## Features
+## Features ⚡
 
-- **Prune Unnecessary Fields**: Remove specific fields by name (blocklist).
-- **Truncate Deep Nesting**: Automatically cut off objects/arrays deeper than a specified limit.
-- **Shorten Lists**: Limit the number of elements in arrays.
-- **Truncate Strings**: Limit string length (UTF-8 aware, counts runes not bytes).
-- **Strip Empty Values**: Remove `null`, empty strings, empty arrays, and empty objects.
+- 🗑️ **Prune Unnecessary Fields**: Remove specific fields by name (blocklist).
+- 📏 **Truncate Deep Nesting**: Automatically cut off objects/arrays deeper than a specified limit.
+- ✂️ **Shorten Lists**: Limit the number of elements in arrays.
+- 📝 **Truncate Strings**: Limit string length (UTF-8 aware, counts runes not bytes).
+- 🧹 **Strip Empty Values**: Remove `null`, empty strings, empty arrays, and empty objects.
 
-## Installation
+## Installation 📦
 
 ### Pre-built Binaries
 
@@ -20,7 +25,7 @@ You can download the latest pre-built binaries for Linux, macOS, and FreeBSD fro
 
 ### Installation Guide
 
-#### Linux (amd64/arm64)
+#### Linux (amd64/arm64) 🐧
 
 1. Download the binary:
    ```bash
@@ -39,7 +44,7 @@ You can download the latest pre-built binaries for Linux, macOS, and FreeBSD fro
    sudo mv slimjson /usr/local/bin/
    ```
 
-#### macOS (Intel/Apple Silicon)
+#### macOS (Intel/Apple Silicon) 🍎
 
 1. Download the binary:
    ```bash
@@ -59,7 +64,7 @@ You can download the latest pre-built binaries for Linux, macOS, and FreeBSD fro
    ```
    *Note: You might need to allow the application in System Settings > Privacy & Security if macOS blocks it.*
 
-#### FreeBSD
+#### FreeBSD 👹
 
 1. Download the binary:
    ```bash
@@ -74,7 +79,7 @@ You can download the latest pre-built binaries for Linux, macOS, and FreeBSD fro
    sudo mv slimjson /usr/local/bin/
    ```
 
-### Build from Source
+### Build from Source 🔨
 
 If you have Go 1.25+ installed:
 
@@ -91,7 +96,7 @@ make build
 sudo mv bin/slimjson /usr/local/bin/
 ```
 
-## Usage
+## Usage 🚀
 
 ### CLI
 
@@ -151,7 +156,7 @@ func main() {
 }
 ```
 
-## Development
+## Development 🛠️
 
 ### Requirements
 
