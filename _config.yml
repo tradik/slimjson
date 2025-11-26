@@ -28,7 +28,7 @@ optional_front_matter:
 # README index - use README.md as homepage
 readme_index:
   enabled: true
-  remove_originals: false
+  remove_originals: true
   
 # Include README.md in the build
 include:
