@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Daemon Mode (HTTP Server)**: Run SlimJSON as an HTTP service
+  - `-d` or `-daemon` flag to run as HTTP server
+  - `-port` flag to specify port (default: 8080)
+  - RESTful API with 3 endpoints:
+    - `POST /slim?profile=<name>` - Compress JSON
+    - `GET /health` - Health check
+    - `GET /profiles` - List available profiles
+  - Supports all built-in and custom profiles
+  - Production-ready HTTP server
+- **Custom Config File Priority**: `-c` or `-config` flag
+  - Specify custom config file path
+  - Takes priority over `.slimjson` search
+  - Enables multiple config files for different environments
+- **Default Help Message**: Shows usage when run without arguments
+  - Comprehensive help with all options
+  - Examples for common use cases
+  - API documentation for daemon mode
 - **Configuration File Support**: `.slimjson` configuration file for custom profiles
   - Searches in current directory and user home directory
   - Simple INI-style format: `[profile-name]` followed by `key=value` pairs

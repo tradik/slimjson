@@ -31,7 +31,10 @@ permalink: /
 - 📝 **Truncate Strings**: Limit string length (UTF-8 aware, counts runes not bytes).
 - 🧹 **Strip Empty Values**: Remove `null`, empty strings, empty arrays, and empty objects.
 - ⚙️ **Custom Profiles**: Define reusable compression profiles in `.slimjson` config file.
+- 🌐 **HTTP Daemon Mode**: Run as a REST API service for JSON compression.
 - 🔧 **Go Library**: Use as a library in your Go applications with full programmatic control.
+- 🎯 **Config Priority**: `-c` flag for custom config file with highest priority.
+- 📋 **Auto Help**: Shows comprehensive usage when run without arguments.
 - ⚡ **High Performance**: Process files in 16-47µs with excellent parallel scalability.
 - 📊 **Proven Results**: 24-98% size reduction on real-world JSON files.
 - 🧪 **Comprehensive Testing**: Full test suite with benchmarks and compression metrics.
@@ -188,7 +191,23 @@ See [.slimjson.example](.slimjson.example) for a complete configuration file wit
 
 ### CLI
 
-The `slimjson` CLI reads JSON from stdin or a file and outputs the slimmed JSON to stdout.
+The `slimjson` CLI reads JSON from stdin or a file and outputs the slimmed JSON to stdout. It can also run as an HTTP daemon for processing JSON via REST API.
+
+#### Quick Start
+
+```bash
+# Show help
+slimjson
+
+# Process file
+slimjson data.json
+
+# Process stdin
+cat data.json | slimjson -profile medium
+
+# Run as daemon
+slimjson -d -port 8080
+```
 
 #### Using Predefined Profiles (Recommended)
 
@@ -300,6 +319,78 @@ slimjson -profile ai-optimized \
 | `-enum-max-values` | 10 | Max unique values for enum |
 
 **Note**: Profiles do NOT truncate strings to preserve data integrity. Use `-string-len` manually if needed, but be aware this may lose information.
+
+#### Daemon Mode (HTTP Server)
+
+Run SlimJSON as an HTTP daemon to process JSON via REST API:
+
+```bash
+# Start daemon on default port 8080
+slimjson -d
+
+# Start on custom port
+slimjson -d -port 3000
+
+# Use custom config file
+slimjson -d -c /path/to/.slimjson
+```
+
+**API Endpoints:**
+
+```bash
+# Health check
+curl http://localhost:8080/health
+# Response: {"status":"ok","version":"1.0"}
+
+# List available profiles
+curl http://localhost:8080/profiles
+# Response: {"builtin":["light","medium","aggressive","ai-optimized"],"custom":["my-profile"]}
+
+# Compress JSON with default settings
+curl -X POST http://localhost:8080/slim \
+  -H "Content-Type: application/json" \
+  -d '{"users":[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}]}'
+
+# Compress JSON with specific profile
+curl -X POST 'http://localhost:8080/slim?profile=medium' \
+  -H "Content-Type: application/json" \
+  -d '{"users":[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}]}'
+
+# Use custom profile from config file
+curl -X POST 'http://localhost:8080/slim?profile=my-custom-profile' \
+  -H "Content-Type: application/json" \
+  -d @data.json
+```
+
+**Daemon Features:**
+- ✅ RESTful API for JSON compression
+- ✅ Support for all built-in and custom profiles
+- ✅ Health check endpoint for monitoring
+- ✅ Profile discovery endpoint
+- ✅ Automatic config file loading
+- ✅ Production-ready HTTP server
+
+**Use Cases:**
+- Microservice for JSON optimization
+- API gateway integration
+- CI/CD pipeline processing
+- Real-time data compression service
+
+#### Custom Config File Priority
+
+```bash
+# Priority 1: Specified config file (highest priority)
+slimjson -c /path/to/custom.slimjson -profile my-profile data.json
+
+# Priority 2: .slimjson in current directory
+slimjson -profile my-profile data.json
+
+# Priority 3: .slimjson in home directory
+slimjson -profile my-profile data.json
+
+# Priority 4: Built-in profiles
+slimjson -profile medium data.json
+```
 
 📚 **See [EXAMPLES.md](EXAMPLES.md) for CLI examples and [LIBRARY_EXAMPLES.md](LIBRARY_EXAMPLES.md) for complete library usage guide.**
 

@@ -6,6 +6,8 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
+	"net/http"
 	"os"
 	"strings"
 
@@ -40,8 +42,165 @@ func getProfile(name string, customProfiles map[string]slimjson.Config) slimjson
 	return slimjson.Config{}
 }
 
+// printUsage prints the usage information
+func printUsage() {
+	fmt.Fprintf(os.Stderr, `slimjson - JSON optimizer for AI/LLM contexts
+
+Usage:
+  slimjson [options] [file]              Process JSON file or stdin
+  slimjson -d [options]                  Run as HTTP daemon
+  slimjson -h                            Show this help
+
+Daemon Mode:
+  -d, -daemon                Run as HTTP daemon listening on specified port
+  -port int                  Port for daemon mode (default: 8080)
+
+Configuration:
+  -c, -config string         Path to custom config file (takes priority over .slimjson)
+  -profile string            Use predefined profile: light, medium, aggressive, ai-optimized
+
+Basic Options:
+  -depth int                 Maximum nesting depth (default: 5, 0 = unlimited)
+  -list-len int              Maximum list length (default: 10, 0 = unlimited)
+  -string-len int            Maximum string length (default: 0 = unlimited)
+  -strip-empty               Remove nulls, empty strings, empty arrays/objects (default: true)
+  -block string              Comma-separated list of field names to remove
+  -pretty                    Pretty print output
+
+Optimization Options:
+  -decimal-places int        Round floats to N decimal places (default: -1 = no rounding)
+  -deduplicate               Remove duplicate values from arrays
+  -sample-strategy string    Array sampling: none, first_last, random, representative (default: none)
+  -sample-size int           Number of items when sampling (default: 0 = use list-len)
+
+Advanced Compression:
+  -null-compression          Track removed null fields in _nulls array
+  -type-inference            Convert uniform arrays to schema+data format
+  -bool-compression          Convert booleans to bit flags
+  -timestamp-compression     Convert ISO timestamps to unix timestamps
+  -string-pooling            Deduplicate repeated strings using string pool
+  -string-pool-min int       Minimum occurrences for string pooling (default: 2)
+  -number-delta              Use delta encoding for sequential numbers
+  -number-delta-threshold int Minimum array size for delta encoding (default: 5)
+  -enum-detection            Convert repeated categorical values to enums
+  -enum-max-values int       Maximum unique values to consider as enum (default: 10)
+
+Examples:
+  # Process file with medium profile
+  slimjson -profile medium data.json
+
+  # Run as daemon on port 3000
+  slimjson -d -port 3000
+
+  # Use custom config file
+  slimjson -c /path/to/config.slimjson -profile my-profile data.json
+
+  # Process stdin with custom settings
+  cat data.json | slimjson -depth 3 -list-len 5 -pretty
+
+Daemon API:
+  POST /slim                 Compress JSON (use ?profile=name for profiles)
+  GET  /health               Health check
+  GET  /profiles             List available profiles
+
+For more information: https://github.com/tradik/slimjson
+`)
+}
+
+// runDaemon starts the HTTP server
+func runDaemon(port int, customProfiles map[string]slimjson.Config) {
+	// Combine built-in and custom profiles
+	allProfiles := slimjson.GetBuiltinProfiles()
+	for name, cfg := range customProfiles {
+		allProfiles[name] = cfg
+	}
+
+	// Health check endpoint
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"status":"ok","version":"1.0"}`)
+	})
+
+	// List profiles endpoint
+	http.HandleFunc("/profiles", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		profiles := make(map[string][]string)
+		profiles["builtin"] = []string{"light", "medium", "aggressive", "ai-optimized"}
+		profiles["custom"] = make([]string, 0)
+
+		for name := range customProfiles {
+			profiles["custom"] = append(profiles["custom"], name)
+		}
+
+		json.NewEncoder(w).Encode(profiles)
+	})
+
+	// Slim endpoint
+	http.HandleFunc("/slim", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Get profile from query parameter
+		profileName := r.URL.Query().Get("profile")
+
+		var cfg slimjson.Config
+		if profileName != "" {
+			var ok bool
+			cfg, ok = allProfiles[strings.ToLower(profileName)]
+			if !ok {
+				http.Error(w, fmt.Sprintf("Unknown profile: %s", profileName), http.StatusBadRequest)
+				return
+			}
+		} else {
+			// Default config
+			cfg = slimjson.Config{
+				MaxDepth:      5,
+				MaxListLength: 10,
+				StripEmpty:    true,
+			}
+		}
+
+		// Parse JSON from request body
+		var data interface{}
+		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid JSON: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		// Process
+		slimmer := slimjson.New(cfg)
+		result := slimmer.Slim(data)
+
+		// Return result
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(result); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to encode result: %v", err), http.StatusInternalServerError)
+			return
+		}
+	})
+
+	addr := fmt.Sprintf(":%d", port)
+	log.Printf("SlimJSON daemon starting on http://localhost%s", addr)
+	log.Printf("Endpoints:")
+	log.Printf("  POST /slim?profile=<name>  - Compress JSON")
+	log.Printf("  GET  /health               - Health check")
+	log.Printf("  GET  /profiles             - List profiles")
+	log.Printf("Available profiles: %d built-in, %d custom", len(slimjson.GetBuiltinProfiles()), len(customProfiles))
+
+	if err := http.ListenAndServe(addr, nil); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
+}
+
 func main() {
 	var (
+		daemon                   bool
+		configFile               string
+		port                     int
 		profile                  string
 		maxDepth                 int
 		maxListLength            int
@@ -65,6 +224,11 @@ func main() {
 		enumMaxValues            int
 	)
 
+	flag.BoolVar(&daemon, "d", false, "Run as HTTP daemon")
+	flag.BoolVar(&daemon, "daemon", false, "Run as HTTP daemon")
+	flag.StringVar(&configFile, "c", "", "Path to custom config file")
+	flag.StringVar(&configFile, "config", "", "Path to custom config file")
+	flag.IntVar(&port, "port", 8080, "Port for daemon mode")
 	flag.StringVar(&profile, "profile", "", "Use predefined profile: light, medium, aggressive, ai-optimized")
 	flag.IntVar(&maxDepth, "depth", 5, "Maximum nesting depth (0 for unlimited)")
 	flag.IntVar(&maxListLength, "list-len", 10, "Maximum list length (0 for unlimited)")
@@ -86,13 +250,42 @@ func main() {
 	flag.IntVar(&numberDeltaThreshold, "number-delta-threshold", 5, "Minimum array size for delta encoding")
 	flag.BoolVar(&enumDetection, "enum-detection", false, "Convert repeated categorical values to enums")
 	flag.IntVar(&enumMaxValues, "enum-max-values", 10, "Maximum unique values to consider as enum")
+
+	// Custom usage message
+	flag.Usage = printUsage
+
 	flag.Parse()
 
-	// Load custom profiles from .slimjson config file
-	customProfiles, err := slimjson.LoadConfigFile()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: Failed to load .slimjson config file: %v\n", err)
-		customProfiles = make(map[string]slimjson.Config)
+	// Show help if no arguments and not daemon mode
+	if !daemon && len(os.Args) == 1 {
+		printUsage()
+		os.Exit(0)
+	}
+
+	// Load custom profiles from config file
+	var customProfiles map[string]slimjson.Config
+	var err error
+
+	if configFile != "" {
+		// Priority: use specified config file
+		customProfiles, err = slimjson.ParseConfigFile(configFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: Failed to load config file %s: %v\n", configFile, err)
+			os.Exit(1)
+		}
+	} else {
+		// Fallback: search for .slimjson in current dir and home dir
+		customProfiles, err = slimjson.LoadConfigFile()
+		if err != nil {
+			// Not an error if file doesn't exist
+			customProfiles = make(map[string]slimjson.Config)
+		}
+	}
+
+	// Run daemon mode if requested
+	if daemon {
+		runDaemon(port, customProfiles)
+		return
 	}
 
 	var input io.Reader
