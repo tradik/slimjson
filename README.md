@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Home
+title: slimjson token optimizer
 permalink: /
 ---
 
