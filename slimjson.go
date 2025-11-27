@@ -145,10 +145,7 @@ func (s *Slimmer) Slim(data interface{}) interface{} {
 
 func (s *Slimmer) prune(data interface{}, depth int) interface{} {
 	if data == nil {
-		if s.Config.StripEmpty {
-			return nil // Caller should handle nil removal if in object/array
-		}
-		return nil
+		return s.handleNil()
 	}
 
 	// Check depth
@@ -160,135 +157,12 @@ func (s *Slimmer) prune(data interface{}, depth int) interface{} {
 
 	switch val.Kind() {
 	case reflect.Map:
-		// Handle Object
-		if val.Len() == 0 {
-			if s.Config.StripEmpty {
-				return nil
-			}
-			return data
-		}
-
-		newMap := make(map[string]interface{})
-		iter := val.MapRange()
-		for iter.Next() {
-			k := iter.Key().String()
-			v := iter.Value().Interface()
-
-			// Check BlockList
-			if s.isBlocked(k) {
-				continue
-			}
-
-			// Track null fields if null compression is enabled
-			if v == nil && s.Config.NullCompression {
-				s.nullFields = append(s.nullFields, k)
-			}
-
-			prunedV := s.prune(v, depth+1)
-
-			if s.Config.StripEmpty && isEmpty(prunedV) {
-				continue
-			}
-
-			newMap[k] = prunedV
-		}
-
-		if s.Config.StripEmpty && len(newMap) == 0 {
-			return nil
-		}
-
-		// Apply boolean compression if enabled
-		if s.Config.BoolCompression {
-			newMap = s.applyBoolCompression(newMap)
-		}
-
-		return newMap
-
+		return s.pruneMap(val, depth)
 	case reflect.Slice, reflect.Array:
-		// Handle Array
-		if val.Len() == 0 {
-			if s.Config.StripEmpty {
-				return nil
-			}
-			return data
-		}
-
-		// First, prune all elements
-		fullList := make([]interface{}, 0, val.Len())
-		for i := 0; i < val.Len(); i++ {
-			v := val.Index(i).Interface()
-			prunedV := s.prune(v, depth+1)
-
-			if s.Config.StripEmpty && isEmpty(prunedV) {
-				continue
-			}
-			fullList = append(fullList, prunedV)
-		}
-
-		// Apply deduplication if enabled
-		if s.Config.DeduplicateArrays {
-			fullList = s.deduplicateArray(fullList)
-		}
-
-		// Apply sampling strategy
-		finalList := s.sampleArray(fullList)
-
-		if s.Config.StripEmpty && len(finalList) == 0 {
-			return nil
-		}
-
-		// Apply advanced array transformations
-		result := interface{}(finalList)
-
-		// Try type inference (schema+data format)
-		if s.Config.TypeInference {
-			result = s.applyTypeInference(finalList)
-		}
-
-		// Try number delta encoding
-		if s.Config.NumberDeltaEncoding {
-			if arrResult, ok := result.([]interface{}); ok {
-				result = s.applyNumberDelta(arrResult)
-			}
-		}
-
-		return result
+		return s.pruneArray(val, depth, data)
 
 	case reflect.String:
-		str := val.String()
-		if s.Config.StripEmpty && str == "" {
-			return nil
-		}
-
-		// Strip emoji and non-ASCII characters if configured
-		if s.Config.StripUTF8Emoji {
-			str = stripEmoji(str)
-		}
-
-		// Apply string pooling
-		if s.Config.StringPooling {
-			if pooled := s.applyStringPooling(str); pooled != str {
-				return pooled // Return index
-			}
-		}
-
-		// Apply timestamp compression
-		if s.Config.TimestampCompression {
-			str = s.applyTimestampCompression(str).(string)
-		}
-
-		// Apply string truncation if configured
-		if s.Config.MaxStringLength > 0 {
-			runes := []rune(str)
-			if len(runes) > s.Config.MaxStringLength {
-				// Truncate and add ellipsis to indicate truncation
-				if s.Config.MaxStringLength > 3 {
-					return string(runes[:s.Config.MaxStringLength-3]) + "..."
-				}
-				return string(runes[:s.Config.MaxStringLength])
-			}
-		}
-		return str
+		return s.pruneString(val)
 
 	case reflect.Float32, reflect.Float64:
 		// Round floats if DecimalPlaces is set
@@ -341,6 +215,149 @@ func (s *Slimmer) deduplicateArray(arr []interface{}) []interface{} {
 		}
 	}
 	return result
+}
+
+// handleNil handles nil values based on StripEmpty config
+func (s *Slimmer) handleNil() interface{} {
+	if s.Config.StripEmpty {
+		return nil
+	}
+	return nil
+}
+
+// pruneArray handles array/slice pruning
+func (s *Slimmer) pruneArray(val reflect.Value, depth int, data interface{}) interface{} {
+	if val.Len() == 0 {
+		if s.Config.StripEmpty {
+			return nil
+		}
+		return data
+	}
+
+	// First, prune all elements
+	fullList := make([]interface{}, 0, val.Len())
+	for i := 0; i < val.Len(); i++ {
+		v := val.Index(i).Interface()
+		prunedV := s.prune(v, depth+1)
+
+		if s.Config.StripEmpty && isEmpty(prunedV) {
+			continue
+		}
+		fullList = append(fullList, prunedV)
+	}
+
+	// Apply deduplication if enabled
+	if s.Config.DeduplicateArrays {
+		fullList = s.deduplicateArray(fullList)
+	}
+
+	// Apply sampling strategy
+	finalList := s.sampleArray(fullList)
+
+	if s.Config.StripEmpty && len(finalList) == 0 {
+		return nil
+	}
+
+	// Apply advanced array transformations
+	result := interface{}(finalList)
+
+	// Try type inference (schema+data format)
+	if s.Config.TypeInference {
+		result = s.applyTypeInference(finalList)
+	}
+
+	// Try number delta encoding
+	if s.Config.NumberDeltaEncoding {
+		if arrResult, ok := result.([]interface{}); ok {
+			result = s.applyNumberDelta(arrResult)
+		}
+	}
+
+	return result
+}
+
+// pruneString handles string pruning and transformations
+func (s *Slimmer) pruneString(val reflect.Value) interface{} {
+	str := val.String()
+	if s.Config.StripEmpty && str == "" {
+		return nil
+	}
+
+	// Strip emoji and non-ASCII characters if configured
+	if s.Config.StripUTF8Emoji {
+		str = stripEmoji(str)
+	}
+
+	// Apply string pooling
+	if s.Config.StringPooling {
+		if pooled := s.applyStringPooling(str); pooled != str {
+			return pooled // Return index
+		}
+	}
+
+	// Apply timestamp compression
+	if s.Config.TimestampCompression {
+		str = s.applyTimestampCompression(str).(string)
+	}
+
+	// Apply string truncation if configured
+	if s.Config.MaxStringLength > 0 {
+		runes := []rune(str)
+		if len(runes) > s.Config.MaxStringLength {
+			// Truncate and add ellipsis to indicate truncation
+			if s.Config.MaxStringLength > 3 {
+				return string(runes[:s.Config.MaxStringLength-3]) + "..."
+			}
+			return string(runes[:s.Config.MaxStringLength])
+		}
+	}
+	return str
+}
+
+// pruneMap handles map/object pruning
+func (s *Slimmer) pruneMap(val reflect.Value, depth int) interface{} {
+	if val.Len() == 0 {
+		if s.Config.StripEmpty {
+			return nil
+		}
+		return val.Interface()
+	}
+
+	newMap := make(map[string]interface{})
+	iter := val.MapRange()
+	for iter.Next() {
+		k := iter.Key().String()
+		v := iter.Value().Interface()
+
+		// Check BlockList
+		if s.isBlocked(k) {
+			continue
+		}
+
+		// Track null fields if null compression is enabled
+		if v == nil && s.Config.NullCompression {
+			s.nullFields = append(s.nullFields, k)
+		}
+
+		prunedV := s.prune(v, depth+1)
+
+		if s.Config.StripEmpty && isEmpty(prunedV) {
+			continue
+		}
+
+		newMap[k] = prunedV
+	}
+
+	if s.Config.StripEmpty && len(newMap) == 0 {
+		return nil
+	}
+
+	// Apply boolean compression if enabled
+	if s.Config.BoolCompression {
+		newMap = s.applyBoolCompression(newMap)
+	}
+
+	return newMap
 }
 
 // sampleArray applies sampling strategy to reduce array size

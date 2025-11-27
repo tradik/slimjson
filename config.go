@@ -105,7 +105,29 @@ func ParseConfigFile(path string) (map[string]Config, error) {
 
 // applyConfigParameter applies a single parameter to config
 func applyConfigParameter(cfg *Config, key, value string) error {
-	switch strings.ToLower(key) {
+	key = strings.ToLower(key)
+
+	// Try basic parameters
+	if err := applyBasicParameter(cfg, key, value); err == nil {
+		return nil
+	} else if err != errUnknownParameter {
+		return err
+	}
+
+	// Try advanced parameters
+	if err := applyAdvancedParameter(cfg, key, value); err == nil {
+		return nil
+	} else if err != errUnknownParameter {
+		return err
+	}
+
+	return fmt.Errorf("unknown parameter: %s", key)
+}
+
+var errUnknownParameter = fmt.Errorf("unknown parameter")
+
+func applyBasicParameter(cfg *Config, key, value string) error {
+	switch key {
 	case "depth", "max-depth", "maxdepth":
 		v, err := strconv.Atoi(value)
 		if err != nil {
@@ -166,6 +188,14 @@ func applyConfigParameter(cfg *Config, key, value string) error {
 		}
 		cfg.SampleSize = v
 
+	default:
+		return errUnknownParameter
+	}
+	return nil
+}
+
+func applyAdvancedParameter(cfg *Config, key, value string) error {
+	switch key {
 	case "null-compression", "nullcompression":
 		v, err := strconv.ParseBool(value)
 		if err != nil {
@@ -244,9 +274,8 @@ func applyConfigParameter(cfg *Config, key, value string) error {
 		cfg.StripUTF8Emoji = v
 
 	default:
-		return fmt.Errorf("unknown parameter: %s", key)
+		return errUnknownParameter
 	}
-
 	return nil
 }
 
