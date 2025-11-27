@@ -72,6 +72,10 @@ type Config struct {
 
 	// EnumMaxValues maximum unique values to consider as enum (default: 10)
 	EnumMaxValues int
+
+	// StripUTF8Emoji removes emoji and other non-ASCII characters from strings
+	// This can significantly reduce token count for LLM contexts
+	StripUTF8Emoji bool
 }
 
 // Slimmer provides methods to slim down JSON data.
@@ -254,6 +258,11 @@ func (s *Slimmer) prune(data interface{}, depth int) interface{} {
 		str := val.String()
 		if s.Config.StripEmpty && str == "" {
 			return nil
+		}
+
+		// Strip emoji and non-ASCII characters if configured
+		if s.Config.StripUTF8Emoji {
+			str = stripEmoji(str)
 		}
 
 		// Apply string pooling
@@ -684,4 +693,24 @@ func (s *Slimmer) applyBoolCompression(m map[string]interface{}) map[string]inte
 	}
 
 	return m
+}
+
+// stripEmoji removes emoji and non-ASCII characters from a string
+func stripEmoji(s string) string {
+	var result strings.Builder
+	result.Grow(len(s))
+
+	for _, r := range s {
+		// Keep only ASCII printable characters (32-126) plus common whitespace
+		if (r >= 32 && r <= 126) || r == '\n' || r == '\r' || r == '\t' {
+			result.WriteRune(r)
+		}
+		// Optionally keep some extended Latin characters (128-255)
+		// Uncomment if you want to preserve accented characters
+		// else if r >= 128 && r <= 255 {
+		// 	result.WriteRune(r)
+		// }
+	}
+
+	return result.String()
 }

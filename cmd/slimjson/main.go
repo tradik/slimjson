@@ -84,6 +84,7 @@ Advanced Compression:
   -number-delta-threshold int Minimum array size for delta encoding (default: 5)
   -enum-detection            Convert repeated categorical values to enums
   -enum-max-values int       Maximum unique values to consider as enum (default: 10)
+  -strip-emoji               Remove emoji and non-ASCII characters from strings
 
 Examples:
   # Process file with medium profile
@@ -222,6 +223,7 @@ func main() {
 		numberDeltaThreshold     int
 		enumDetection            bool
 		enumMaxValues            int
+		stripUTF8Emoji           bool
 	)
 
 	flag.BoolVar(&daemon, "d", false, "Run as HTTP daemon")
@@ -250,6 +252,7 @@ func main() {
 	flag.IntVar(&numberDeltaThreshold, "number-delta-threshold", 5, "Minimum array size for delta encoding")
 	flag.BoolVar(&enumDetection, "enum-detection", false, "Convert repeated categorical values to enums")
 	flag.IntVar(&enumMaxValues, "enum-max-values", 10, "Maximum unique values to consider as enum")
+	flag.BoolVar(&stripUTF8Emoji, "strip-emoji", false, "Remove emoji and non-ASCII characters from strings")
 
 	// Custom usage message
 	flag.Usage = printUsage
@@ -352,6 +355,9 @@ func main() {
 			cfg.EnumDetection = enumDetection
 			cfg.EnumMaxValues = enumMaxValues
 		}
+		if stripUTF8Emoji {
+			cfg.StripUTF8Emoji = stripUTF8Emoji
+		}
 	} else {
 		// Use custom parameters
 		cfg = slimjson.Config{
@@ -373,6 +379,7 @@ func main() {
 			NumberDeltaThreshold:     numberDeltaThreshold,
 			EnumDetection:            enumDetection,
 			EnumMaxValues:            enumMaxValues,
+			StripUTF8Emoji:           stripUTF8Emoji,
 		}
 		if blockList != "" {
 			cfg.BlockList = strings.Split(blockList, ",")

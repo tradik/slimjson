@@ -23,6 +23,7 @@ permalink: /
 
 - 📖 [CLI Examples](EXAMPLES.md) - Command-line usage examples
 - 💻 [Library Guide](LIBRARY_EXAMPLES.md) - Complete guide for developers using SlimJSON as a Go library
+- 😊 [Emoji Removal Examples](examples/emoji-removal.md) - Reduce LLM token count by removing emoji
 - 🌐 [HTTP API Documentation](api/README.md) - REST API reference and integration examples
 - 📋 [OpenAPI Specification](api/swagger.yaml) - Swagger/OpenAPI 3.0 spec for API
 - ⚙️ [Configuration File](.slimjson.example) - Custom profiles with `.slimjson` file
@@ -36,6 +37,7 @@ permalink: /
 - ✂️ **Shorten Lists**: Limit the number of elements in arrays.
 - 📝 **Truncate Strings**: Limit string length (UTF-8 aware, counts runes not bytes).
 - 🧹 **Strip Empty Values**: Remove `null`, empty strings, empty arrays, and empty objects.
+- 😊 **Remove Emoji & Non-ASCII**: Strip emoji and Unicode characters to reduce LLM token count.
 - ⚙️ **Custom Profiles**: Define reusable compression profiles in `.slimjson` config file.
 - 🌐 **HTTP Daemon Mode**: Run as a REST API service for JSON compression.
 - 🔧 **Go Library**: Use as a library in your Go applications with full programmatic control.
@@ -269,6 +271,9 @@ slimjson -profile medium -decimal-places 2 -deduplicate data.json
 # Advanced compression - all optimizations
 slimjson -string-pooling -enum-detection -timestamp-compression data.json
 
+# Remove emoji and non-ASCII characters (reduces LLM token count)
+slimjson -strip-emoji data.json
+
 # Maximum compression (use all features)
 slimjson -profile ai-optimized \
   -decimal-places 2 \
@@ -277,6 +282,7 @@ slimjson -profile ai-optimized \
   -sample-size 50 \
   -null-compression \
   -type-inference \
+  -strip-emoji \
   -bool-compression \
   -timestamp-compression \
   -string-pooling \
@@ -313,6 +319,7 @@ slimjson -profile ai-optimized \
 - `-number-delta-threshold int`: Minimum array size for delta encoding (default: 5)
 - `-enum-detection`: Convert repeated categorical values to enums (default: false)
 - `-enum-max-values int`: Maximum unique values to consider as enum (default: 10)
+- `-strip-emoji`: Remove emoji and non-ASCII characters from strings (default: false)
 
 **Profile Details:**
 

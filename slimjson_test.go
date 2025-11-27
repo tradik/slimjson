@@ -549,6 +549,86 @@ func TestCombinedOptimizations(t *testing.T) {
 	t.Logf("Result: %s", string(jsonBytes))
 }
 
+// TestStripEmoji tests emoji and non-ASCII character removal
+func TestStripEmoji(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    map[string]interface{}
+		expected map[string]interface{}
+	}{
+		{
+			name: "Remove emoji from strings",
+			input: map[string]interface{}{
+				"message": "Hello 👋 World 🌍!",
+				"user":    "John 😊 Doe",
+				"status":  "✅ Completed",
+			},
+			expected: map[string]interface{}{
+				"message": "Hello  World !",
+				"user":    "John  Doe",
+				"status":  " Completed",
+			},
+		},
+		{
+			name: "Remove non-ASCII characters",
+			input: map[string]interface{}{
+				"text": "Café ☕ München 中文 日本語",
+			},
+			expected: map[string]interface{}{
+				"text": "Caf  Mnchen  ",
+			},
+		},
+		{
+			name: "Preserve ASCII characters",
+			input: map[string]interface{}{
+				"text": "Hello World! 123 @#$%",
+			},
+			expected: map[string]interface{}{
+				"text": "Hello World! 123 @#$%",
+			},
+		},
+		{
+			name: "Mixed content",
+			input: map[string]interface{}{
+				"description": "Product 🎁 price: $99.99 💰",
+				"rating":      "⭐⭐⭐⭐⭐ 5/5",
+			},
+			expected: map[string]interface{}{
+				"description": "Product  price: $99.99 ",
+				"rating":      " 5/5",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := Config{
+				StripUTF8Emoji: true,
+			}
+
+			slimmer := New(cfg)
+			result := slimmer.Slim(tt.input)
+
+			resultMap, ok := result.(map[string]interface{})
+			if !ok {
+				t.Fatalf("Expected map result, got %T", result)
+			}
+
+			for key, expectedVal := range tt.expected {
+				actualVal, exists := resultMap[key]
+				if !exists {
+					t.Errorf("Key %s not found in result", key)
+					continue
+				}
+
+				if actualVal != expectedVal {
+					t.Errorf("Key %s: expected %q, got %q", key, expectedVal, actualVal)
+				}
+			}
+		})
+	}
+}
+
 // BenchmarkBooleanCompression benchmarks boolean compression
 func BenchmarkBooleanCompression(b *testing.B) {
 	input := map[string]interface{}{

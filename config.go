@@ -236,6 +236,13 @@ func applyConfigParameter(cfg *Config, key, value string) error {
 		}
 		cfg.EnumMaxValues = v
 
+	case "strip-emoji", "stripemoji", "strip-utf8-emoji", "striputf8emoji":
+		v, err := strconv.ParseBool(value)
+		if err != nil {
+			return fmt.Errorf("invalid strip-emoji value: %s", value)
+		}
+		cfg.StripUTF8Emoji = v
+
 	default:
 		return fmt.Errorf("unknown parameter: %s", key)
 	}

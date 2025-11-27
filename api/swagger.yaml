@@ -97,6 +97,11 @@ paths:
         
         ## Custom Profiles
         You can define custom profiles in a `.slimjson` configuration file.
+        
+        ## Emoji Removal
+        Use the `-strip-emoji` flag to remove emoji and non-ASCII characters from strings.
+        This can significantly reduce token count for LLM contexts by removing characters
+        that often consume multiple tokens.
       operationId: compressJSON
       parameters:
         - name: profile

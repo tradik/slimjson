@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Emoji and Non-ASCII Character Removal**: New `-strip-emoji` flag
+  - Removes emoji and non-ASCII characters from strings
+  - Significantly reduces token count for LLM contexts
+  - Emoji characters often consume 2-4 tokens each
+  - Configurable via CLI flag, config file, or API
+  - Preserves ASCII printable characters (32-126) and whitespace
+  - Example: "Hello 👋 World 🌍!" becomes "Hello  World !"
 - **Daemon Mode (HTTP Server)**: Run SlimJSON as an HTTP service
   - `-d` or `-daemon` flag to run as HTTP server
   - `-port` flag to specify port (default: 8080)

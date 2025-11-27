@@ -32,6 +32,7 @@ string-pooling=true
 type-inference=true
 bool-compression=true
 timestamp-compression=true
+strip-emoji=true
 block=avatar_url,gravatar_id,url,html_url
 
 # Custom profile for analytics data
@@ -69,6 +70,7 @@ number-delta=true
 number-delta-threshold=5
 enum-detection=true
 enum-max-values=10
+strip-emoji=true
 block=description,summary,comment,notes,bio,readme,avatar_url,url
 
 # Development profile - preserve most data

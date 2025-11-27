@@ -104,6 +104,7 @@
 //	    NumberDeltaThreshold     int  // Min array size for delta
 //	    EnumDetection            bool // Convert categorical values to enums
 //	    EnumMaxValues            int  // Max unique values for enum
+//	    StripUTF8Emoji           bool // Remove emoji and non-ASCII characters
 //	}
 //
 // # Advanced Compression
@@ -119,6 +120,7 @@
 //	    TypeInference:        true,
 //	    BoolCompression:      true,
 //	    TimestampCompression: true,
+//	    StripUTF8Emoji:       true, // Remove emoji for LLM contexts
 //	}
 //
 //	slimmer := slimjson.New(cfg)
@@ -128,6 +130,23 @@
 //	// - _strings: String pool (if StringPooling enabled)
 //	// - _enums: Enum mappings (if EnumDetection enabled)
 //	// - _nulls: Tracked null fields (if NullCompression enabled)
+//
+// # Emoji and Non-ASCII Character Removal
+//
+// Remove emoji and non-ASCII characters to reduce token count for LLMs:
+//
+//	cfg := slimjson.Config{
+//	    StripUTF8Emoji: true,
+//	}
+//
+//	data := map[string]interface{}{
+//	    "message": "Hello 👋 World 🌍!",
+//	    "status":  "✅ Completed",
+//	}
+//
+//	slimmer := slimjson.New(cfg)
+//	result := slimmer.Slim(data)
+//	// Result: {"message": "Hello  World !", "status": " Completed"}
 //
 // # Custom Profiles from File
 //
