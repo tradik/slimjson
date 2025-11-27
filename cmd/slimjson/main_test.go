@@ -14,10 +14,10 @@ func TestHealthEndpoint(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	w := httptest.NewRecorder()
 
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok","version":"1.0"}`))
+		_, _ = w.Write([]byte(`{"status":"ok","version":"1.0"}`))
 	})
 
 	handler.ServeHTTP(w, req)
@@ -52,7 +52,7 @@ func TestProfilesEndpoint(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/profiles", nil)
 	w := httptest.NewRecorder()
 
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
 		profiles := make(map[string][]string)
@@ -63,7 +63,7 @@ func TestProfilesEndpoint(t *testing.T) {
 			profiles["custom"] = append(profiles["custom"], name)
 		}
 
-		json.NewEncoder(w).Encode(profiles)
+		_ = json.NewEncoder(w).Encode(profiles)
 	})
 
 	handler.ServeHTTP(w, req)
@@ -184,7 +184,7 @@ func TestSlimEndpoint(t *testing.T) {
 				result := slimmer.Slim(data)
 
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(result)
+				_ = json.NewEncoder(w).Encode(result)
 			})
 
 			handler.ServeHTTP(w, req)

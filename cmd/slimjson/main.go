@@ -117,14 +117,14 @@ func runDaemon(port int, customProfiles map[string]slimjson.Config) {
 	}
 
 	// Health check endpoint
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"status":"ok","version":"1.0"}`)
+		_, _ = fmt.Fprintf(w, `{"status":"ok","version":"1.0"}`)
 	})
 
 	// List profiles endpoint
-	http.HandleFunc("/profiles", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/profiles", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
 		profiles := make(map[string][]string)
@@ -135,7 +135,7 @@ func runDaemon(port int, customProfiles map[string]slimjson.Config) {
 			profiles["custom"] = append(profiles["custom"], name)
 		}
 
-		json.NewEncoder(w).Encode(profiles)
+		_ = json.NewEncoder(w).Encode(profiles)
 	})
 
 	// Slim endpoint
