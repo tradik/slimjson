@@ -7,9 +7,12 @@ permalink: /
 # slimjson 🎯
 
 [![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![Go Reference](https://pkg.go.dev/badge/github.com/tradik/slimjson.svg)](https://pkg.go.dev/github.com/tradik/slimjson)
 [![License](https://img.shields.io/badge/License-BSD--3-blue.svg)](LICENSE)
 [![CI/CD](https://github.com/tradik/slimjson/workflows/CI/CD/badge.svg)](https://github.com/tradik/slimjson/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/tradik/slimjson)](https://goreportcard.com/report/github.com/tradik/slimjson)
+[![GitHub Release](https://img.shields.io/github/v/release/tradik/slimjson)](https://github.com/tradik/slimjson/releases)
+[![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue)](https://github.com/tradik/slimjson/pkgs/container/slimjson)
 [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://tradik.github.io/slimjson/)
 
 `slimjson` is a Go tool and library designed to "slim down" JSON data before sending it to AI models or other bandwidth-constrained systems. It removes unnecessary fields, truncates deep nesting, shortens lists and strings, and strips empty values to create an optimized "diet" version of your JSON.
@@ -44,9 +47,23 @@ permalink: /
 
 ## Installation 📦
 
+### Go Package
+
+Install as a Go library:
+
+```bash
+go get github.com/tradik/slimjson@latest
+```
+
+Or install a specific version:
+
+```bash
+go get github.com/tradik/slimjson@v1.0.0
+```
+
 ### Pre-built Binaries
 
-You can download the latest pre-built binaries for Linux, macOS, and FreeBSD from the [Releases](https://github.com/tradik/slimjson/releases) page (once available).
+Download the latest pre-built binaries for Linux, macOS, and FreeBSD from the [Releases](https://github.com/tradik/slimjson/releases) page.
 
 ### Installation Guide
 
@@ -874,9 +891,59 @@ golangci-lint run
 
 - **[QUICK_START.md](QUICK_START.md)** - Get started with testing in 5 minutes
 - **[EXAMPLES.md](EXAMPLES.md)** - Comprehensive usage examples and patterns
+- **[LIBRARY_EXAMPLES.md](LIBRARY_EXAMPLES.md)** - Complete library usage guide
+- **[api/README.md](api/README.md)** - HTTP API documentation
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
+- **[RELEASING.md](RELEASING.md)** - How to create a new release
 - **[testing/README.md](testing/README.md)** - Testing suite documentation
 - **[TESTING_SUMMARY.md](TESTING_SUMMARY.md)** - Complete testing overview
+
+## Publishing & Releases 🚀
+
+### Creating a Release
+
+SlimJSON uses automated GitHub Actions for releases. To publish a new version:
+
+```bash
+# 1. Update CHANGELOG.md with release notes
+# 2. Commit changes
+git add CHANGELOG.md
+git commit -m "chore: prepare release v1.0.0"
+git push origin main
+
+# 3. Create and push tag
+git tag -a v1.0.0 -m "Release v1.0.0"
+git push origin v1.0.0
+```
+
+GitHub Actions will automatically:
+- ✅ Run all tests and linting
+- ✅ Build binaries for all platforms (linux, darwin, freebsd × amd64, arm64)
+- ✅ Create GitHub Release with changelog and checksums
+- ✅ Publish to [pkg.go.dev](https://pkg.go.dev/github.com/tradik/slimjson)
+- ✅ Build and push Docker images to [ghcr.io](https://github.com/tradik/slimjson/pkgs/container/slimjson)
+
+See [RELEASING.md](RELEASING.md) for detailed release process documentation.
+
+### Installation from Release
+
+**Go Package:**
+```bash
+go get github.com/tradik/slimjson@v1.0.0
+```
+
+**Binary:**
+```bash
+wget https://github.com/tradik/slimjson/releases/download/v1.0.0/slimjson-linux-amd64
+chmod +x slimjson-linux-amd64
+sudo mv slimjson-linux-amd64 /usr/local/bin/slimjson
+```
+
+**Docker:**
+```bash
+docker pull ghcr.io/tradik/slimjson:v1.0.0
+docker run --rm ghcr.io/tradik/slimjson:v1.0.0 --help
+```
 
 ## Contributing 🤝
 

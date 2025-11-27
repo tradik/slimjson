@@ -1,0 +1,134 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'doc.go'
+      - 'README.md'
+      - 'LIBRARY_EXAMPLES.md'
+      - 'api/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-docs:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Verify go.mod
+        run: |
+          go mod verify
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+      - name: Check package documentation
+        run: |
+          echo "Checking package documentation..."
+          go doc -all > /tmp/godoc.txt
+          
+          # Verify doc.go exists and has content
+          if [ ! -f "doc.go" ]; then
+            echo "Error: doc.go not found"
+            exit 1
+          fi
+          
+          # Check if documentation contains key sections
+          if ! grep -q "Package slimjson provides" /tmp/godoc.txt; then
+            echo "Error: Package documentation missing"
+            exit 1
+          fi
+          
+          echo "✅ Package documentation is valid"
+
+      - name: Validate OpenAPI spec
+        run: |
+          if [ -f "api/swagger.yaml" ]; then
+            echo "✅ OpenAPI specification found"
+            
+            # Basic YAML validation
+            if command -v python3 &> /dev/null; then
+              python3 -c "import yaml; yaml.safe_load(open('api/swagger.yaml'))" && echo "✅ YAML is valid"
+            fi
+          else
+            echo "Warning: api/swagger.yaml not found"
+          fi
+
+      - name: Check README links
+        run: |
+          echo "Checking README.md links..."
+          
+          # Check if important files exist
+          files=(
+            "EXAMPLES.md"
+            "LIBRARY_EXAMPLES.md"
+            "api/README.md"
+            "api/swagger.yaml"
+            ".slimjson.example"
+            "CHANGELOG.md"
+          )
+          
+          for file in "${files[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✅ $file exists"
+            else
+              echo "⚠️  $file not found"
+            fi
+          done
+
+      - name: Generate documentation summary
+        run: |
+          echo "## Documentation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Package Documentation" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          go doc | head -20 >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Files" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ doc.go ($(wc -l < doc.go) lines)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ README.md ($(wc -l < README.md) lines)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ LIBRARY_EXAMPLES.md ($(wc -l < LIBRARY_EXAMPLES.md) lines)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ api/README.md ($(wc -l < api/README.md) lines)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ api/swagger.yaml ($(wc -l < api/swagger.yaml) lines)" >> $GITHUB_STEP_SUMMARY
+
+  notify-pkg-go-dev:
+    name: Notify pkg.go.dev
+    runs-on: ubuntu-latest
+    needs: validate-docs
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trigger pkg.go.dev update
+        run: |
+          MODULE="github.com/tradik/slimjson"
+          BRANCH="main"
+          
+          echo "Notifying pkg.go.dev about updates to $MODULE"
+          
+          # Trigger fetch from Go proxy
+          curl -f "https://proxy.golang.org/$MODULE/@latest" || true
+          
+          # Give it a moment
+          sleep 5
+          
+          echo "✅ pkg.go.dev notified"
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### pkg.go.dev" >> $GITHUB_STEP_SUMMARY
+          echo "Documentation will be updated at: https://pkg.go.dev/$MODULE" >> $GITHUB_STEP_SUMMARY

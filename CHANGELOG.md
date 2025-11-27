@@ -41,6 +41,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Compression endpoint tests with multiple scenarios
   - Error handling tests
   - Config priority tests
+- **Automated Release Pipeline**: GitHub Actions for publishing
+  - Automatic binary builds for multiple platforms (linux, darwin, freebsd × amd64, arm64)
+  - GitHub Releases with changelog and checksums
+  - Automatic publication to pkg.go.dev
+  - Docker image builds and push to ghcr.io
+  - Multi-architecture Docker support (amd64, arm64)
+  - Documentation validation workflow
+  - Release process documentation (RELEASING.md)
 - **Configuration File Support**: `.slimjson` configuration file for custom profiles
   - Searches in current directory and user home directory
   - Simple INI-style format: `[profile-name]` followed by `key=value` pairs

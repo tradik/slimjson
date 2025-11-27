@@ -1,15 +1,32 @@
 services:
+  # SlimJSON HTTP Daemon (default)
   slimjson:
     build: .
     image: slimjson:latest
     container_name: slimjson
     restart: unless-stopped
-    stdin_open: true
-    tty: true
-    # Example: pipe JSON through stdin
-    # command: ["-depth", "5", "-list-len", "10", "-strip-empty=true"]
+    ports:
+      - "8080:8080"
     volumes:
-      - ./data:/data
-    # If running as HTTP service in future:
-    # ports:
-    #   - "8080:8080"
+      - ./.slimjson:/app/.slimjson:ro
+    # Default command runs daemon mode (defined in Dockerfile)
+    # command: ["-d", "-port", "8080"]
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 256M
+        reservations:
+          cpus: '0.5'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
